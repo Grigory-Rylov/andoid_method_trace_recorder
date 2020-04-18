@@ -13,7 +13,15 @@ java -jar trace-recorder.java -p <package> [-a <activity>] [-o <output_file_name
 #Usage in code
 
 1) Create instance of `MethodTraceRecorder`
-2) Call `startRecording(activityName)` to start `activityName` and method trace recording.
+2) Call 
+```
+    try {
+        recorder.startRecording(activityName)
+    } catch (e: MethodTraceRecordException) {
+        <handle exception>
+    }
+``` 
+to start `activityName` and method trace recording.
 3) Call `stopRecording()` to stop method trace recording
 
 
