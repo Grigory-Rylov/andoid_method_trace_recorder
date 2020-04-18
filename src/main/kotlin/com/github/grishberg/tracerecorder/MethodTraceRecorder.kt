@@ -54,7 +54,7 @@ class MethodTraceRecorder(
         val device = devices.first()
 
         if (startActivityName != null) {
-            startActivity(startActivityName, device)
+            startActivity(packageName, startActivityName, device)
         }
 
         waitForApplication(device, packageName)
@@ -100,7 +100,7 @@ class MethodTraceRecorder(
         client?.startSamplingProfiler(1, TimeUnit.MICROSECONDS)
     }
 
-    private fun startActivity(mainActivity: String, device: IDevice) {
+    private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
         val command = "am start -n $packageName/$mainActivity"
         device.executeShellCommand(
             command,
