@@ -1,9 +1,11 @@
 package com.github.grishberg.tracerecorder
 
+import com.github.grishberg.tracerecorder.exceptions.MethodTraceRecordException
 import org.apache.commons.cli.*
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.system.exitProcess
 
 private const val PACKAGE_OPT_NAME = "p"
 private const val RECORD_DURATION_OPT_NAME = "t"
@@ -48,17 +50,27 @@ class Launcher(
         val listener = object : MethodTraceEventListener {
             override fun success(traceFile: File) {
                 println("trace file saved at $traceFile")
-                System.exit(0)
+                exitProcess(0)
+            }
+
+            override fun onSuccessRemote(remoteFilePath: String) {
+                println("trace file saved in remote device at $remoteFilePath")
+                exitProcess(0)
             }
 
             override fun fail(throwable: Throwable) {
                 println(throwable.message)
-                System.exit(1)
+                exitProcess(1)
             }
         }
 
-        val recorder = MethodTraceRecorder(packageName, outputFileName, listener)
-        recorder.startRecording(activity)
+        val recorder = MethodTraceRecorder(outputFileName, listener)
+        try {
+            recorder.startRecording(packageName, activity)
+        } catch (e: MethodTraceRecordException) {
+            println(e.message)
+            exitProcess(1)
+        }
 
         Thread.sleep(duration * 1000L)
 

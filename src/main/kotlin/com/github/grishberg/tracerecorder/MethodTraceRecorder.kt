@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit
  * @param outputFileName path to output filename
  */
 class MethodTraceRecorder(
-    private val packageName: String,
     private val outputFileName: String,
     private val listener: MethodTraceEventListener
 ) {
@@ -36,7 +35,7 @@ class MethodTraceRecorder(
      * If [startActivityName] not given - should start application manually
      */
     @Throws(MethodTraceRecordException::class)
-    fun startRecording(startActivityName: String?) {
+    fun startRecording(packageName: String, startActivityName: String?) {
 
         if (isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
