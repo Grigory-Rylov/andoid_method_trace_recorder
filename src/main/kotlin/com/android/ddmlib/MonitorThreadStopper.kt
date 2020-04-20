@@ -1,9 +1,7 @@
-package com.android.ddmlib;
+package com.android.ddmlib
 
-import com.github.grishberg.tracerecorder.adb.AdbWrapper;
-
-public class MonitorThreadStopper {
-    public static void stopMonitorThread() {
-        MonitorThread.getInstance().interrupt();
+object MonitorThreadStopper {
+    fun stopMonitorThread() {
+        MonitorThread.getInstance().interrupt()
     }
 }
