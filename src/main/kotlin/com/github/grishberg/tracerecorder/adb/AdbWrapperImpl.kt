@@ -18,4 +18,8 @@ class AdbWrapperImpl : AdbWrapper {
     override fun getDevices(): Array<IDevice> {
         return bridge.devices
     }
+
+    override fun terminate() {
+        AndroidDebugBridge.terminate()
+    }
 }

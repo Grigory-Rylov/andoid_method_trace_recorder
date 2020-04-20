@@ -5,4 +5,5 @@ import com.android.ddmlib.IDevice
 interface AdbWrapper {
     fun hasInitialDeviceList(): Boolean
     fun getDevices(): Array<IDevice>
+    fun terminate()
 }

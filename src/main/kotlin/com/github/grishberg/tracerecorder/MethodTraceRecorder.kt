@@ -27,6 +27,8 @@ class MethodTraceRecorder(
     private val listener: MethodTraceEventListener
 ) {
     private var client: Client? = null
+    private var adbWrapper: AdbWrapper? = null
+    private var shouldRun: Boolean = false
 
     /**
      * Starts method trace recording.
@@ -42,6 +44,8 @@ class MethodTraceRecorder(
         }
 
         val adb = AdbWrapperImpl()
+        adbWrapper = adb
+        shouldRun = true
 
         waitForDevice(adb)
 
@@ -57,12 +61,13 @@ class MethodTraceRecorder(
             startActivity(packageName, startActivityName, device)
         }
 
-        waitForApplication(device, packageName)
+        waitForApplication(adb, device, packageName)
 
         client = device.getClient(packageName)
         ClientData.setMethodProfilingHandler(object : ClientData.IMethodProfilingHandler {
             override fun onSuccess(remoteFilePath: String, client: Client) {
                 println("onSuccess: $remoteFilePath $client")
+                adb.terminate()
             }
 
             override fun onSuccess(data: ByteArray, client: Client) {
@@ -86,14 +91,17 @@ class MethodTraceRecorder(
                 }
 
                 listener.success(file)
+                adb.terminate()
             }
 
             override fun onStartFailure(client: Client, message: String) {
                 throw StartFailureException("onStartFailure: $client $message")
+                adb.terminate()
             }
 
             override fun onEndFailure(client: Client, message: String) {
                 EndFailureException("onEndFailure: $client $message")
+                adb.terminate()
             }
         })
 
@@ -112,34 +120,46 @@ class MethodTraceRecorder(
      * Stops recoding.
      */
     fun stopRecording() {
+        shouldRun = false
         client?.stopSamplingProfiler()
+    }
+
+    /**
+     * Force disconnect adb.
+     */
+    fun forceDisconnect() {
+        adbWrapper?.let {
+            it.terminate()
+        }
     }
 
     @Throws(DeviceTimeoutException::class)
     private fun waitForDevice(adb: AdbWrapper) {
         var count = 0
-        while (!adb.hasInitialDeviceList()) {
+        while (!adb.hasInitialDeviceList() && shouldRun) {
             try {
                 Thread.sleep(100)
                 count++
             } catch (ignored: InterruptedException) {
             }
             if (count > 100) {
+                adb.terminate()
                 throw DeviceTimeoutException()
             }
         }
     }
 
     @Throws(AppTimeoutException::class)
-    private fun waitForApplication(device: IDevice, packageName: String) {
+    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String) {
         var count = 0
-        while (device.getClient(packageName) == null) {
+        while (device.getClient(packageName) == null && shouldRun) {
             try {
                 Thread.sleep(100)
                 count++
             } catch (ignored: InterruptedException) {
             }
             if (count > 100) {
+                adb.terminate()
                 throw AppTimeoutException(packageName)
             }
         }
