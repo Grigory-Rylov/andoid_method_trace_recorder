@@ -19,7 +19,7 @@ class AdbWrapperImpl : AdbWrapper {
         return bridge.devices
     }
 
-    override fun terminate() {
-        AndroidDebugBridge.terminate()
+    override fun stop() {
+        AndroidDebugBridge.disconnectBridge()
     }
 }
