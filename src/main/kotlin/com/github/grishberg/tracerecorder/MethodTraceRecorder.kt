@@ -67,7 +67,7 @@ class MethodTraceRecorder(
         ClientData.setMethodProfilingHandler(object : ClientData.IMethodProfilingHandler {
             override fun onSuccess(remoteFilePath: String, client: Client) {
                 println("onSuccess: $remoteFilePath $client")
-                adb.terminate()
+                adb.stop()
             }
 
             override fun onSuccess(data: ByteArray, client: Client) {
@@ -91,17 +91,17 @@ class MethodTraceRecorder(
                 }
 
                 listener.success(file)
-                adb.terminate()
+                adb.stop()
             }
 
             override fun onStartFailure(client: Client, message: String) {
                 throw StartFailureException("onStartFailure: $client $message")
-                adb.terminate()
+                adb.stop()
             }
 
             override fun onEndFailure(client: Client, message: String) {
                 EndFailureException("onEndFailure: $client $message")
-                adb.terminate()
+                adb.stop()
             }
         })
 
@@ -129,7 +129,7 @@ class MethodTraceRecorder(
      */
     fun forceDisconnect() {
         adbWrapper?.let {
-            it.terminate()
+            it.stop()
         }
     }
 
@@ -143,7 +143,7 @@ class MethodTraceRecorder(
             } catch (ignored: InterruptedException) {
             }
             if (count > 100) {
-                adb.terminate()
+                adb.stop()
                 throw DeviceTimeoutException()
             }
         }
@@ -159,7 +159,7 @@ class MethodTraceRecorder(
             } catch (ignored: InterruptedException) {
             }
             if (count > 100) {
-                adb.terminate()
+                adb.stop()
                 throw AppTimeoutException(packageName)
             }
         }
