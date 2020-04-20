@@ -109,7 +109,8 @@ class MethodTraceRecorder(
     }
 
     private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
-        val command = "am start -n $packageName/$mainActivity"
+        val command =
+            "am start $packageName/$mainActivity -c android.intent.category.LAUNCHER -a android.intent.action.MAIN"
         device.executeShellCommand(
             command,
             ShellOutputReceiver()

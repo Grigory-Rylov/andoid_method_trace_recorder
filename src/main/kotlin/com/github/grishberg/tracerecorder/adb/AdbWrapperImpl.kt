@@ -2,7 +2,6 @@ package com.github.grishberg.tracerecorder.adb
 
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
-import com.android.ddmlib.MonitorThreadStopper
 
 class AdbWrapperImpl : AdbWrapper {
     private val bridge: AndroidDebugBridge
@@ -21,7 +20,6 @@ class AdbWrapperImpl : AdbWrapper {
 
     override fun stop() {
         AndroidDebugBridge.disconnectBridge()
-        MonitorThreadStopper.stopMonitorThread()
         AndroidDebugBridge.terminate()
     }
 }
