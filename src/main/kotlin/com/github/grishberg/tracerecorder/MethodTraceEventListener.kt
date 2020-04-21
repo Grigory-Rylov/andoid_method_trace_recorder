@@ -3,9 +3,10 @@ package com.github.grishberg.tracerecorder
 import java.io.File
 
 interface MethodTraceEventListener {
-    fun success(traceFile: File)
+    fun onMethodTraceReceived(traceFile: File)
 
-    fun onSuccessRemote(remoteFilePath: String)
+    fun onMethodTraceReceived(remoteFilePath: String)
+    fun onSystraceReceived(values: List<SystraceRecord>)
 
     fun fail(throwable: Throwable)
 }

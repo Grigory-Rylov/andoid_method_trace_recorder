@@ -11,6 +11,7 @@ private const val PACKAGE_OPT_NAME = "p"
 private const val RECORD_DURATION_OPT_NAME = "t"
 private const val ACTIVITY_OPT_NAME = "a"
 private const val OUTPUT_FILE_NAME_OPT_NAME = "o"
+private const val ENABLE_SYSTRACE = "s"
 
 class Launcher(
     private val args: Array<String>
@@ -21,6 +22,7 @@ class Launcher(
         options.addRequiredOption(RECORD_DURATION_OPT_NAME, "timeout", true, "Recording duration in seconds")
         options.addOption(ACTIVITY_OPT_NAME, "activity", true, "Application entry point activity")
         options.addOption(OUTPUT_FILE_NAME_OPT_NAME, "outFile", true, "Output trace file name")
+        options.addOption(ENABLE_SYSTRACE, "systrace", false, "Should record systrace too")
 
         val parser = DefaultParser()
         val formatter = HelpFormatter()
@@ -48,12 +50,12 @@ class Launcher(
         }
 
         val listener = object : MethodTraceEventListener {
-            override fun success(traceFile: File) {
+            override fun onMethodTraceReceived(traceFile: File) {
                 println("trace file saved at $traceFile")
                 exitProcess(0)
             }
 
-            override fun onSuccessRemote(remoteFilePath: String) {
+            override fun onMethodTraceReceived(remoteFilePath: String) {
                 println("trace file saved in remote device at $remoteFilePath")
                 exitProcess(0)
             }
@@ -62,9 +64,17 @@ class Launcher(
                 println(throwable.message)
                 exitProcess(1)
             }
+
+            override fun onSystraceReceived(values: List<SystraceRecord>) {
+                println("SYSTRACE:")
+                for (record in values) {
+                    println("${record.name} - ${record.endTime - record.startTime}")
+                }
+                exitProcess(0)
+            }
         }
 
-        val recorder = MethodTraceRecorder(outputFileName, listener)
+        val recorder = MethodTraceRecorderImpl(outputFileName, listener, false, true)
         try {
             recorder.startRecording(packageName, activity)
         } catch (e: MethodTraceRecordException) {
