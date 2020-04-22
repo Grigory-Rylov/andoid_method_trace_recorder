@@ -36,14 +36,17 @@ class MethodTraceRecorderImpl(
     private val adb = AdbWrapperImpl(methodTrace)
     private var shouldRun: Boolean = false
 
-    /**
-     * Starts method trace recording.
-     *
-     * @param startActivityName activity for starting application.
-     * If [startActivityName] not given - should start application manually
-     */
     @Throws(MethodTraceRecordException::class)
     override fun startRecording(packageName: String, startActivityName: String?) {
+        startRecording(packageName, startActivityName, 1)
+    }
+
+    @Throws(MethodTraceRecordException::class)
+    override fun startRecording(
+        packageName: String,
+        startActivityName: String?,
+        samplingIntervalInMicroseconds: Int
+    ) {
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
@@ -113,7 +116,7 @@ class MethodTraceRecorderImpl(
             }
         })
 
-        client?.startSamplingProfiler(1, TimeUnit.MICROSECONDS)
+        client?.startSamplingProfiler(samplingIntervalInMicroseconds, TimeUnit.MICROSECONDS)
     }
 
     private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
