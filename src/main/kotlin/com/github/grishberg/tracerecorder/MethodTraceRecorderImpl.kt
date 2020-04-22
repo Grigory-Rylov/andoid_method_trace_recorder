@@ -30,7 +30,7 @@ class MethodTraceRecorderImpl(
     private val systrace: Boolean
 ) : MethodTraceRecorder {
     private var client: Client? = null
-    private var adbWrapper: AdbWrapper? = null
+    private val adb = AdbWrapperImpl(methodTrace)
     private var shouldRun: Boolean = false
 
     /**
@@ -41,13 +41,10 @@ class MethodTraceRecorderImpl(
      */
     @Throws(MethodTraceRecordException::class)
     override fun startRecording(packageName: String, startActivityName: String?) {
-
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
-
-        val adb = AdbWrapperImpl(methodTrace)
-        adbWrapper = adb
+        adb.connect()
         shouldRun = true
 
         waitForDevice(adb)
@@ -139,7 +136,7 @@ class MethodTraceRecorderImpl(
         if (!systrace) {
             return
         }
-        adbWrapper?.let {
+        adb.let {
             val devices = it.getDevices()
             if (devices.size > 1) {
                 throw MethodTraceRecordException("more than one device")
@@ -165,7 +162,7 @@ class MethodTraceRecorderImpl(
      * Force disconnect adb.
      */
     override fun disconnect() {
-        adbWrapper?.stop()
+        adb.stop()
     }
 
     @Throws(DeviceTimeoutException::class)

@@ -29,6 +29,7 @@ class TraceParser : MultiLineReceiver() {
         val endTracePattern = END_TRACE.toRegex()
 
         for (line in lines) {
+            println(line)
             if (line.startsWith("TRACE:")) {
                 continue
             }
@@ -53,8 +54,12 @@ class TraceParser : MultiLineReceiver() {
 
             if (endResult != null) {
                 val timestamp = endResult.groupValues[2].toDouble()
-                val record = records.pop()
-                record?.endTime = timestamp
+                if (records.isNotEmpty()) {
+                    val record = records.pop()
+                    record?.endTime = timestamp
+                } else {
+                    println("Error: there is no values in stack")
+                }
             }
         }
     }
