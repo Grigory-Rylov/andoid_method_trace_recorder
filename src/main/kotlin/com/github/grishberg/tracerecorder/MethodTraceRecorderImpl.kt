@@ -8,6 +8,8 @@ import com.github.grishberg.tracerecorder.adb.AdbWrapper
 import com.github.grishberg.tracerecorder.adb.AdbWrapperImpl
 import com.github.grishberg.tracerecorder.adb.ShellOutputReceiver
 import com.github.grishberg.tracerecorder.adb.TraceParser
+import com.github.grishberg.tracerecorder.common.NoOpLogger
+import com.github.grishberg.tracerecorder.common.RecorderLogger
 import com.github.grishberg.tracerecorder.exceptions.*
 import java.io.BufferedOutputStream
 import java.io.File
@@ -27,7 +29,8 @@ class MethodTraceRecorderImpl(
     private val outputFileName: String,
     private val listener: MethodTraceEventListener,
     private val methodTrace: Boolean,
-    private val systrace: Boolean
+    private val systrace: Boolean,
+    private val logger: RecorderLogger = NoOpLogger()
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace)
@@ -116,12 +119,12 @@ class MethodTraceRecorderImpl(
     private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
         val command =
             "am start $packageName/$mainActivity -c android.intent.category.LAUNCHER -a android.intent.action.MAIN"
-        device.executeShellCommand(command, ShellOutputReceiver())
+        device.executeShellCommand(command, ShellOutputReceiver(logger))
     }
 
     private fun startTrace(packageName: String, device: IDevice) {
         val command = "atrace -a $packageName -n --async_start"
-        device.executeShellCommand(command, ShellOutputReceiver())
+        device.executeShellCommand(command, ShellOutputReceiver(logger))
     }
 
     /**
@@ -152,7 +155,7 @@ class MethodTraceRecorderImpl(
 
     private fun stopTrace(device: IDevice) {
         val command = "atrace --async_stop"
-        val traceParser = TraceParser()
+        val traceParser = TraceParser(logger)
         device.executeShellCommand(command, traceParser)
         val values = traceParser.values
         listener.onSystraceReceived(values)

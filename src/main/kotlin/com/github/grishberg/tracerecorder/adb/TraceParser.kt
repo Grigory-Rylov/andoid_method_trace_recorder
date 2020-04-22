@@ -2,6 +2,7 @@ package com.github.grishberg.tracerecorder.adb
 
 import com.android.ddmlib.MultiLineReceiver
 import com.github.grishberg.tracerecorder.SystraceRecord
+import com.github.grishberg.tracerecorder.common.RecorderLogger
 import java.util.*
 
 
@@ -12,7 +13,9 @@ private const val END_TRACE = "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\
 /**
  * Systrace parser.
  */
-class TraceParser : MultiLineReceiver() {
+class TraceParser(
+    private val logger: RecorderLogger
+) : MultiLineReceiver() {
     private val records = Stack<SystraceRecord>()
     private val _values = mutableListOf<SystraceRecord>()
 
@@ -29,7 +32,7 @@ class TraceParser : MultiLineReceiver() {
         val endTracePattern = END_TRACE.toRegex()
 
         for (line in lines) {
-            println(line)
+            logger.d(line)
             if (line.startsWith("TRACE:")) {
                 continue
             }
@@ -58,7 +61,7 @@ class TraceParser : MultiLineReceiver() {
                     val record = records.pop()
                     record?.endTime = timestamp
                 } else {
-                    println("Error: there is no values in stack")
+                    logger.e("Error: there is no values in stack")
                 }
             }
         }
