@@ -77,7 +77,7 @@ class Launcher(
             override fun onSystraceReceived(values: List<SystraceRecord>) {
                 println("SYSTRACE:")
                 for (record in values) {
-                    println("${record.name} - ${String.format("%.06f", record.endTime - record.startTime)}")
+                    println("${record.name} - ${String.format("%.06f", (record.endTime - record.startTime)*1000)} ms")
                 }
                 exitProcess(0)
             }

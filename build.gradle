@@ -3,8 +3,8 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.3.61'
 }
 
-group 'com.github.grishbeg.tracerecorder'
-version '1.2.2'
+group 'com.github.Grigory-Rylov'
+version '1.2.3'
 
 sourceCompatibility = 1.8
 
@@ -18,6 +18,9 @@ ext {
     runnerVerstion = '1.6.7'
     slf4jVersion = '1.7.25'
     log4jVersion = '1.2.17'
+    PUBLISH_GROUP_ID = group
+    PUBLISH_ARTIFACT_ID = 'andoid_method_trace_recorder'
+    PUBLISH_VERSION = version
 }
 
 dependencies {

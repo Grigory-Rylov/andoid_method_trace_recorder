@@ -8,4 +8,8 @@ class ConsoleLogger : RecorderLogger {
     override fun e(msg: String) {
         println("E: $msg")
     }
+
+    override fun e(msg: String, t: Throwable) {
+        println("E $msg, ${t.printStackTrace()}")
+    }
 }
