@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit
  * @param packageName recorded application package.
  * @param outputFileName path to output filename
  */
+private const val TAG = "MethodTraceRecorderImpl"
+
 class MethodTraceRecorderImpl(
     private val outputFileName: String,
     private val listener: MethodTraceEventListener,
@@ -33,7 +35,7 @@ class MethodTraceRecorderImpl(
     private val logger: RecorderLogger = NoOpLogger()
 ) : MethodTraceRecorder {
     private var client: Client? = null
-    private val adb = AdbWrapperImpl(methodTrace)
+    private val adb = AdbWrapperImpl(methodTrace, logger)
     private var shouldRun: Boolean = false
 
     @Throws(MethodTraceRecordException::class)
@@ -47,6 +49,7 @@ class MethodTraceRecorderImpl(
         startActivityName: String?,
         samplingIntervalInMicroseconds: Int
     ) {
+        logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
@@ -78,7 +81,7 @@ class MethodTraceRecorderImpl(
         client = device.getClient(packageName)
         ClientData.setMethodProfilingHandler(object : ClientData.IMethodProfilingHandler {
             override fun onSuccess(remoteFilePath: String, client: Client) {
-                println("onSuccess: $remoteFilePath $client")
+                logger.d("$TAG onSuccess: $remoteFilePath $client")
                 listener.onMethodTraceReceived(remoteFilePath)
             }
 
@@ -94,6 +97,7 @@ class MethodTraceRecorderImpl(
                     bs.close()
                     bs = null
                 } catch (e: java.lang.Exception) {
+                    logger.e("$TAG: save trace file failed", e)
                     e.printStackTrace()
                 }
 
@@ -116,17 +120,20 @@ class MethodTraceRecorderImpl(
             }
         })
 
+        logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
         client?.startSamplingProfiler(samplingIntervalInMicroseconds, TimeUnit.MICROSECONDS)
     }
 
     private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
         val command =
             "am start $packageName/$mainActivity -c android.intent.category.LAUNCHER -a android.intent.action.MAIN"
+        logger.d("$TAG: startActivity cmd='$command', device=$device")
         device.executeShellCommand(command, ShellOutputReceiver(logger))
     }
 
     private fun startTrace(packageName: String, device: IDevice) {
         val command = "atrace -a $packageName -n --async_start"
+        logger.d("$TAG: startTrace pkg='$packageName', device=$device")
         device.executeShellCommand(command, ShellOutputReceiver(logger))
     }
 
@@ -134,6 +141,7 @@ class MethodTraceRecorderImpl(
      * Stops recoding.
      */
     override fun stopRecording() {
+        logger.d("$TAG stopRecording, methodTrace=$methodTrace")
         shouldRun = false
         if (methodTrace) {
             client?.stopSamplingProfiler()
@@ -142,21 +150,22 @@ class MethodTraceRecorderImpl(
         if (!systrace) {
             return
         }
-        adb.let {
-            val devices = it.getDevices()
-            if (devices.size > 1) {
-                throw MethodTraceRecordException("more than one device")
-            } else if (devices.isEmpty()) {
-                throw NoDeviceException()
-            }
-            val device = devices.first()
 
-
-            stopTrace(device)
+        val devices = adb.getDevices()
+        if (devices.size > 1) {
+            throw MethodTraceRecordException("more than one device")
+        } else if (devices.isEmpty()) {
+            throw NoDeviceException()
         }
+        val device = devices.first()
+
+
+        stopTrace(device)
+
     }
 
     private fun stopTrace(device: IDevice) {
+        logger.d("$TAG stopTrace, device=$device")
         val command = "atrace --async_stop"
         val traceParser = TraceParser(logger)
         device.executeShellCommand(command, traceParser)
@@ -168,11 +177,13 @@ class MethodTraceRecorderImpl(
      * Force disconnect adb.
      */
     override fun disconnect() {
+        logger.d("$TAG disconnect")
         adb.stop()
     }
 
     @Throws(DeviceTimeoutException::class)
     private fun waitForDevice(adb: AdbWrapper) {
+        logger.d("$TAG: waitForDevice")
         var count = 0
         while (!adb.hasInitialDeviceList() && shouldRun) {
             try {
@@ -189,6 +200,7 @@ class MethodTraceRecorderImpl(
 
     @Throws(AppTimeoutException::class)
     private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String) {
+        logger.d("$TAG: waitForApplication pkg= $packageName, device=$device")
         var count = 0
         while (device.getClient(packageName) == null && shouldRun) {
             try {
