@@ -128,13 +128,13 @@ class MethodTraceRecorderImpl(
         val command =
             "am start $packageName/$mainActivity -c android.intent.category.LAUNCHER -a android.intent.action.MAIN"
         logger.d("$TAG: startActivity cmd='$command', device=$device")
-        device.executeShellCommand(command, ShellOutputReceiver(logger))
+        device.executeShellCommand(command, ShellOutputReceiver(logger, listener))
     }
 
     private fun startTrace(packageName: String, device: IDevice) {
         val command = "atrace -a $packageName -n --async_start"
         logger.d("$TAG: startTrace pkg='$packageName', device=$device")
-        device.executeShellCommand(command, ShellOutputReceiver(logger))
+        device.executeShellCommand(command, ShellOutputReceiver(logger, listener))
     }
 
     /**
