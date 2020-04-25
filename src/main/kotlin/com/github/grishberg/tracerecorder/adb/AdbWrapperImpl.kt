@@ -14,14 +14,18 @@ class AdbWrapperImpl(
     private var bridge: AndroidDebugBridge? = null
 
     override fun connect() {
-        logger.d("$TAG connect, bridge=$bridge")
+        logger.d("$TAG: connect, bridge=$bridge")
         if (bridge != null) {
             stop()
         }
 
         val androidSdkPath = System.getenv("ANDROID_HOME")
+        logger.d("$TAG: init with clientSupport=$clientSupport")
         AndroidDebugBridge.init(clientSupport)
+
+        logger.d("$TAG: creating ADB bridge")
         bridge = AndroidDebugBridge.createBridge("$androidSdkPath/platform-tools/adb", false)
+        logger.d("$TAG: connected, bridge=$bridge")
     }
 
     override fun hasInitialDeviceList(): Boolean {
@@ -33,7 +37,7 @@ class AdbWrapperImpl(
     }
 
     override fun stop() {
-        logger.d("$TAG stop")
+        logger.d("$TAG: stop")
         bridge = null
         AndroidDebugBridge.disconnectBridge()
         AndroidDebugBridge.terminate()

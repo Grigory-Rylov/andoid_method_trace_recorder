@@ -58,12 +58,14 @@ class MethodTraceRecorderImpl(
 
         waitForDevice(adb)
 
+        logger.d("$TAG: fetching devices")
         val devices = adb.getDevices()
         if (devices.size > 1) {
             throw MethodTraceRecordException("more than one device")
         } else if (devices.isEmpty()) {
             throw NoDeviceException()
         }
+        logger.d("$TAG: found devices: $devices")
         val device = devices.first()
 
         if (systrace) {
@@ -79,9 +81,11 @@ class MethodTraceRecorderImpl(
         waitForApplication(adb, device, packageName)
 
         client = device.getClient(packageName)
+        logger.d("$TAG: got client $client")
+
         ClientData.setMethodProfilingHandler(object : ClientData.IMethodProfilingHandler {
             override fun onSuccess(remoteFilePath: String, client: Client) {
-                logger.d("$TAG onSuccess: $remoteFilePath $client")
+                logger.d("$TAG: onSuccess: $remoteFilePath $client")
                 listener.onMethodTraceReceived(remoteFilePath)
             }
 
