@@ -9,10 +9,11 @@ private const val TAG = "AdbWrapperImpl"
 
 class AdbWrapperImpl(
     private val clientSupport: Boolean = true,
-    private val logger: RecorderLogger
+    private val logger: RecorderLogger,
+    androidHome: String? = null
 ) : AdbWrapper {
     private var bridge: AndroidDebugBridge? = null
-    private val androidSdkPath = System.getenv("ANDROID_HOME")
+    private val androidSdkPath = androidHome ?: System.getenv("ANDROID_HOME")
 
     override fun connect() {
         logger.d("$TAG: connect, bridge=$bridge")
@@ -20,10 +21,9 @@ class AdbWrapperImpl(
             stop()
         }
 
-        logger.d("$TAG: init with clientSupport=$clientSupport")
         AndroidDebugBridge.init(clientSupport)
 
-        logger.d("$TAG: creating ADB bridge")
+        logger.d("$TAG: creating ADB bridge with android_home=$androidSdkPath")
         bridge = AndroidDebugBridge.createBridge("$androidSdkPath/platform-tools/adb", false)
         logger.d("$TAG: connected, bridge=$bridge")
     }

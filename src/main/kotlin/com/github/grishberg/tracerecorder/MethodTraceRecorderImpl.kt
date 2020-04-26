@@ -32,11 +32,13 @@ class MethodTraceRecorderImpl(
     private val listener: MethodTraceEventListener,
     private val methodTrace: Boolean,
     private val systrace: Boolean,
-    private val logger: RecorderLogger = NoOpLogger()
+    private val logger: RecorderLogger = NoOpLogger(),
+    private val androidHome: String? = null
 ) : MethodTraceRecorder {
     private var client: Client? = null
-    private val adb = AdbWrapperImpl(methodTrace, logger)
+    private val adb = AdbWrapperImpl(methodTrace, logger, androidHome)
     private var shouldRun: Boolean = false
+
 
     @Throws(MethodTraceRecordException::class)
     override fun startRecording(packageName: String, startActivityName: String?) {
