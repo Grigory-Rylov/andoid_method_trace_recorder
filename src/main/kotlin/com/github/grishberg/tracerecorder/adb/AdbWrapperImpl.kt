@@ -12,6 +12,7 @@ class AdbWrapperImpl(
     private val logger: RecorderLogger
 ) : AdbWrapper {
     private var bridge: AndroidDebugBridge? = null
+    private val androidSdkPath = System.getenv("ANDROID_HOME")
 
     override fun connect() {
         logger.d("$TAG: connect, bridge=$bridge")
@@ -19,7 +20,6 @@ class AdbWrapperImpl(
             stop()
         }
 
-        val androidSdkPath = System.getenv("ANDROID_HOME")
         logger.d("$TAG: init with clientSupport=$clientSupport")
         AndroidDebugBridge.init(clientSupport)
 
