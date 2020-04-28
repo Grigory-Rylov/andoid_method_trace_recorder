@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit
 private const val TAG = "MethodTraceRecorderImpl"
 
 class MethodTraceRecorderImpl(
-    private val outputFileName: String,
     private val listener: MethodTraceEventListener,
     private val methodTrace: Boolean,
     private val systrace: Boolean,
@@ -41,12 +40,17 @@ class MethodTraceRecorderImpl(
 
 
     @Throws(MethodTraceRecordException::class)
-    override fun startRecording(packageName: String, startActivityName: String?) {
-        startRecording(packageName, startActivityName, 1)
+    override fun startRecording(
+        outputFileName: String,
+        packageName: String,
+        startActivityName: String?
+    ) {
+        startRecording(outputFileName, packageName, startActivityName, 1)
     }
 
     @Throws(MethodTraceRecordException::class)
     override fun startRecording(
+        outputFileName: String,
         packageName: String,
         startActivityName: String?,
         samplingIntervalInMicroseconds: Int
@@ -58,6 +62,7 @@ class MethodTraceRecorderImpl(
         adb.connect()
         shouldRun = true
 
+        listener.onStartWaitingForDevice()
         waitForDevice(adb)
 
         logger.d("$TAG: fetching devices")
@@ -80,6 +85,7 @@ class MethodTraceRecorderImpl(
         if (!methodTrace) {
             return
         }
+        listener.onStartWaitingForApplication()
         waitForApplication(adb, device, packageName)
 
         client = device.getClient(packageName)
@@ -128,6 +134,7 @@ class MethodTraceRecorderImpl(
 
         logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
         client?.startSamplingProfiler(samplingIntervalInMicroseconds, TimeUnit.MICROSECONDS)
+        listener.onStartedRecording()
     }
 
     private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
