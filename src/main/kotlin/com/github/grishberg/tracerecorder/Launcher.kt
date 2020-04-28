@@ -59,6 +59,10 @@ class Launcher(
         }
 
         val listener = object : MethodTraceEventListener {
+            override fun onStartedRecording() {
+                println("Start recording...")
+            }
+
             override fun onMethodTraceReceived(traceFile: File) {
                 println("trace file saved at $traceFile")
                 exitProcess(0)
@@ -77,21 +81,20 @@ class Launcher(
             override fun onSystraceReceived(values: List<SystraceRecord>) {
                 println("SYSTRACE:")
                 for (record in values) {
-                    println("${record.name} - ${String.format("%.06f", (record.endTime - record.startTime)*1000)} ms")
+                    println("${record.name} - ${String.format("%.06f", (record.endTime - record.startTime) * 1000)} ms")
                 }
                 exitProcess(0)
             }
         }
 
         val recorder = MethodTraceRecorderImpl(
-            outputFileName,
             listener,
             methodTrace,
             systrace,
             ConsoleLogger()
         )
         try {
-            recorder.startRecording(packageName, activity)
+            recorder.startRecording(outputFileName, packageName, activity)
         } catch (e: MethodTraceRecordException) {
             println(e.message)
             exitProcess(1)

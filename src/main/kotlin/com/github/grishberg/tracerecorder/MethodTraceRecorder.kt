@@ -11,13 +11,18 @@ interface MethodTraceRecorder {
      * @param samplingIntervalInMicroseconds interval in microseconds.
      */
     @Throws(MethodTraceRecordException::class)
-    fun startRecording(packageName: String, startActivityName: String?, samplingIntervalInMicroseconds: Int)
+    fun startRecording(
+        outputFileName: String,
+        packageName: String,
+        startActivityName: String?,
+        samplingIntervalInMicroseconds: Int
+    )
 
     /**
      * Same as method above but samplingInterval is 1
      */
     @Throws(MethodTraceRecordException::class)
-    fun startRecording(packageName: String, startActivityName: String?)
+    fun startRecording(outputFileName: String, packageName: String, startActivityName: String?)
 
     /**
      * Stops recoding.
