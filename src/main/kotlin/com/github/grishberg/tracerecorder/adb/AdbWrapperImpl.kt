@@ -10,7 +10,8 @@ private const val TAG = "AdbWrapperImpl"
 class AdbWrapperImpl(
     private val clientSupport: Boolean = true,
     private val logger: RecorderLogger,
-    androidHome: String? = null
+    androidHome: String? = null,
+    private val forceNewBridge: Boolean = false
 ) : AdbWrapper {
     private var bridge: AndroidDebugBridge? = null
     private val androidSdkPath: String? = androidHome ?: System.getenv("ANDROID_HOME")
@@ -25,7 +26,7 @@ class AdbWrapperImpl(
 
         logger.d("$TAG: creating ADB bridge with android_home=$androidSdkPath")
         if (androidSdkPath != null) {
-            bridge = AndroidDebugBridge.createBridge("$androidSdkPath/platform-tools/adb", false)
+            bridge = AndroidDebugBridge.createBridge("$androidSdkPath/platform-tools/adb", forceNewBridge)
         } else {
             bridge = AndroidDebugBridge.createBridge()
         }

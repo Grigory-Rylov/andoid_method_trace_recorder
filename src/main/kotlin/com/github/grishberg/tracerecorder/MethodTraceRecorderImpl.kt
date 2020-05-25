@@ -32,10 +32,12 @@ class MethodTraceRecorderImpl(
     private val methodTrace: Boolean,
     private val systrace: Boolean,
     private val logger: RecorderLogger = NoOpLogger(),
-    private val androidHome: String? = null
+    androidHome: String? = null,
+    private val debugPort: Int = 8600,
+    forceNewBridge: Boolean = false
 ) : MethodTraceRecorder {
     private var client: Client? = null
-    private val adb = AdbWrapperImpl(methodTrace, logger, androidHome)
+    private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
     private var shouldRun: Boolean = false
 
 
@@ -56,6 +58,7 @@ class MethodTraceRecorderImpl(
         samplingIntervalInMicroseconds: Int
     ) {
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
+        DdmPreferences.setSelectedDebugPort(debugPort)
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
