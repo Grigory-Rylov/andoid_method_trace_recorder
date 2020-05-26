@@ -33,6 +33,10 @@ class AdbWrapperImpl(
         logger.d("$TAG: connected, bridge=$bridge")
     }
 
+    override fun isConnected(): Boolean {
+        return bridge?.isConnected ?: false
+    }
+
     override fun hasInitialDeviceList(): Boolean {
         return bridge?.hasInitialDeviceList() ?: false
     }

@@ -69,18 +69,13 @@ class MethodTraceRecorderImpl(
         shouldRun = true
 
         listener.onStartWaitingForDevice()
-        waitForDevice(adb)
+        waitForDevices(adb)
         if (!shouldRun) {
             return
         }
 
         logger.d("$TAG: fetching devices")
-        val devices = adb.getDevices()
-        if (devices.size > 1) {
-            throw MethodTraceRecordException("more than one device")
-        } else if (devices.isEmpty()) {
-            throw NoDeviceException()
-        }
+        val devices = fetchDevices()
         logger.d("$TAG: found devices: $devices")
         val device = devices.first()
 
@@ -94,8 +89,50 @@ class MethodTraceRecorderImpl(
         if (!methodTrace) {
             return
         }
+
+        tryToRecordSamplingProfile(device, packageName, outputFileName, samplingIntervalInMicroseconds)
+    }
+
+    private fun tryToRecordSamplingProfile(
+        device: IDevice,
+        packageName: String,
+        outputFileName: String,
+        samplingIntervalInMicroseconds: Int
+    ) {
         listener.onStartWaitingForApplication()
-        waitForApplication(adb, device, packageName)
+
+        for (i in 0 until 3) {
+            val reconnectedDevice: IDevice
+            if (!adb.isConnected()) {
+                adb.connect()
+                waitForDevices(adb)
+                val devices = fetchDevices()
+                reconnectedDevice = devices.first()
+            } else {
+                reconnectedDevice = device
+            }
+
+            if (!shouldRun) {
+                return
+            }
+            try {
+                waitForApplication(adb, reconnectedDevice, packageName, 20)
+                recordSamplingProfile(reconnectedDevice, packageName, outputFileName, samplingIntervalInMicroseconds)
+                return
+            } catch (e: AppTimeoutException) {
+                logger.e("$TAG timeout while waiting for $packageName")
+                adb.stop()
+            }
+        }
+        throw AppTimeoutException(packageName)
+    }
+
+    private fun recordSamplingProfile(
+        device: IDevice,
+        packageName: String,
+        outputFileName: String,
+        samplingIntervalInMicroseconds: Int
+    ) {
         if (!shouldRun) {
             return
         }
@@ -103,46 +140,7 @@ class MethodTraceRecorderImpl(
         client = device.getClient(packageName)
         logger.d("$TAG: got client $client")
 
-        ClientData.setMethodProfilingHandler(object : ClientData.IMethodProfilingHandler {
-            override fun onSuccess(remoteFilePath: String, client: Client) {
-                logger.d("$TAG: onSuccess: $remoteFilePath $client")
-                listener.onMethodTraceReceived(remoteFilePath)
-            }
-
-            override fun onSuccess(data: ByteArray, client: Client) {
-
-                var bs: BufferedOutputStream? = null
-                val file = File(outputFileName)
-
-                try {
-                    val fs = FileOutputStream(file)
-                    bs = BufferedOutputStream(fs)
-                    bs.write(data)
-                    bs.close()
-                    bs = null
-                } catch (e: java.lang.Exception) {
-                    logger.e("$TAG: save trace file failed", e)
-                    e.printStackTrace()
-                }
-
-                if (bs != null) try {
-                    bs.close()
-                } catch (e: Exception) {
-                }
-
-                listener.onMethodTraceReceived(file)
-            }
-
-            override fun onStartFailure(client: Client, message: String) {
-                adb.stop()
-                listener.fail(StartFailureException("onStartFailure: $client $message"))
-            }
-
-            override fun onEndFailure(client: Client, message: String) {
-                adb.stop()
-                listener.fail(EndFailureException("onEndFailure: $client $message"))
-            }
-        })
+        ClientData.setMethodProfilingHandler(MethodProfilingHandler(logger, listener, outputFileName, adb))
 
         logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
         client?.startSamplingProfiler(samplingIntervalInMicroseconds, TimeUnit.MICROSECONDS)
@@ -197,17 +195,21 @@ class MethodTraceRecorderImpl(
             return
         }
 
+        val devices = fetchDevices()
+        val device = devices.first()
+
+        stopTrace(device)
+
+    }
+
+    private fun fetchDevices(): List<IDevice> {
         val devices = adb.getDevices()
         if (devices.size > 1) {
             throw MethodTraceRecordException("more than one device")
         } else if (devices.isEmpty()) {
             throw NoDeviceException()
         }
-        val device = devices.first()
-
-
-        stopTrace(device)
-
+        return devices
     }
 
     private fun stopTrace(device: IDevice) {
@@ -228,7 +230,7 @@ class MethodTraceRecorderImpl(
     }
 
     @Throws(DeviceTimeoutException::class)
-    private fun waitForDevice(adb: AdbWrapper) {
+    private fun waitForDevices(adb: AdbWrapper) {
         logger.d("$TAG: waitForDevice")
         var count = 0
         while (!adb.hasInitialDeviceList() && shouldRun) {
@@ -245,7 +247,7 @@ class MethodTraceRecorderImpl(
     }
 
     @Throws(AppTimeoutException::class)
-    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String) {
+    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
         logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
         var count = 0
         while (device.getClient(packageName) == null && shouldRun) {
@@ -254,7 +256,7 @@ class MethodTraceRecorderImpl(
                 count++
             } catch (ignored: InterruptedException) {
             }
-            if (count > waitTimeoutInSeconds * 10) {
+            if (count > timeoutInSeconds * 10) {
                 adb.stop()
                 throw AppTimeoutException(packageName)
             }
@@ -269,6 +271,52 @@ class MethodTraceRecorderImpl(
         } catch (e: SocketException) {
             // Could not connect.
             return false
+        }
+    }
+
+    class MethodProfilingHandler(
+        private val logger: RecorderLogger,
+        private val listener: MethodTraceEventListener,
+        private val outputFileName: String,
+        private val adb: AdbWrapper
+    ) : ClientData.IMethodProfilingHandler {
+        override fun onSuccess(remoteFilePath: String, client: Client) {
+            logger.d("$TAG: onSuccess: $remoteFilePath $client")
+            listener.onMethodTraceReceived(remoteFilePath)
+        }
+
+        override fun onSuccess(data: ByteArray, client: Client) {
+
+            var bs: BufferedOutputStream? = null
+            val file = File(outputFileName)
+
+            try {
+                val fs = FileOutputStream(file)
+                bs = BufferedOutputStream(fs)
+                bs.write(data)
+                bs.close()
+                bs = null
+            } catch (e: java.lang.Exception) {
+                logger.e("$TAG: save trace file failed", e)
+                e.printStackTrace()
+            }
+
+            if (bs != null) try {
+                bs.close()
+            } catch (e: Exception) {
+            }
+
+            listener.onMethodTraceReceived(file)
+        }
+
+        override fun onStartFailure(client: Client, message: String) {
+            adb.stop()
+            listener.fail(StartFailureException("onStartFailure: $client $message"))
+        }
+
+        override fun onEndFailure(client: Client, message: String) {
+            adb.stop()
+            listener.fail(EndFailureException("onEndFailure: $client $message"))
         }
     }
 }
