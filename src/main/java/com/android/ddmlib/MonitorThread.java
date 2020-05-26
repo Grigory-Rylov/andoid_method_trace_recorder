@@ -16,7 +16,6 @@
 
 package com.android.ddmlib;
 
-
 import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.jdwp.JdwpExtension;
 import com.github.grishberg.tracerecorder.common.NoOpLogger;
@@ -115,7 +114,7 @@ final class MonitorThread extends Thread {
         }
 
         if (mDebugSelectedChan != null) {
-            log.d("ddms: Changing debug-selected port to " + port);
+            Log.d("ddms", "Changing debug-selected port to " + port);
             mNewDebugSelectedPort = port;
             wakeup();
         } else {
@@ -190,15 +189,13 @@ final class MonitorThread extends Thread {
      */
     @Override
     public void run() {
-        log.d("ddms: Monitor is up");
+        log.d("ddms", "Monitor is up");
 
         // create a selector
         try {
             mSelector = Selector.open();
         } catch (IOException ioe) {
-            log.e("ddms :Failed to initialize Monitor Thread: ", ioe);
-            Log.logAndDisplay(LogLevel.ERROR, "ddms",
-                    "Failed to initialize Monitor Thread: " + ioe.getMessage());
+            log.e("ddms", "Failed to initialize Monitor Thread: ", ioe);
             return;
         }
 
@@ -226,8 +223,7 @@ final class MonitorThread extends Thread {
                         }
                     }
                 } catch (IOException ioe) {
-                    log.e("ddms: Failed to reopen debug port for Selected Client to: " + mNewDebugSelectedPort, ioe);
-                    Log.e("ddms", ioe);
+                    log.e("ddms", "Failed to reopen debug port for Selected Client to: " + mNewDebugSelectedPort, ioe);
                     mNewDebugSelectedPort = mDebugSelectedPort; // no retry
                 }
 
@@ -262,18 +258,18 @@ final class MonitorThread extends Thread {
                         } else if (key.attachment() instanceof MonitorThread) {
                             processDebugSelectedActivity(key);
                         } else {
-                            log.e("ddms: unknown activity key");
+                            log.e("ddms", "unknown activity key");
                         }
                     } catch (Exception e) {
                         // we don't want to have our thread be killed because of any uncaught
                         // exception, so we intercept all here.
-                        log.e("ddms: Exception during activity from Selector.", e);
+                        log.e("ddms", "Exception during activity from Selector.", e);
                     }
                 }
             } catch (Exception e) {
                 // we don't want to have our thread be killed because of any uncaught
                 // exception, so we intercept all here.
-                log.e("ddms: Exception MonitorThread.run()", e);
+                log.e("ddms", "Exception MonitorThread.run()", e);
             }
         }
     }
@@ -294,7 +290,7 @@ final class MonitorThread extends Thread {
 
         try {
             if (!key.isReadable() || !key.isValid()) {
-                log.d("ddms: Invalid key from " + client + ". Dropping client.");
+                log.d("ddms", "Invalid key from " + client + ". Dropping client.");
                 dropClient(client, true /* notify */);
                 return;
             }
@@ -322,16 +318,16 @@ final class MonitorThread extends Thread {
             // something closed down, no need to print anything. The client is simply dropped.
             dropClient(client, true /* notify */);
         } catch (Exception ex) {
-            log.e("ddms", ex);
+            Log.e("ddms", ex);
 
             /* close the client; automatically un-registers from selector */
             dropClient(client, true /* notify */);
 
             if (ex instanceof BufferOverflowException) {
-                log.w("ddms :Client data packet exceeded maximum buffer size " + client);
+                log.w("ddms", "Client data packet exceeded maximum buffer size " + client);
             } else {
                 // don't know what this is, display it
-                log.e("ddms", ex);
+                Log.e("ddms", ex);
             }
         }
     }
@@ -385,12 +381,12 @@ final class MonitorThread extends Thread {
                 try {
                     acceptNewDebugger(dbg, null);
                 } catch (IOException ioe) {
-                    log.e("ddms: debugger accept() failed", ioe);
+                    log.e("ddms", "debugger accept() failed", ioe);
                 }
             } else if (key.isReadable()) {
                 processDebuggerData(key);
             } else {
-                log.d("ddm-debugger: key in unknown state");
+                log.d("ddm-debugger", "key in unknown state");
             }
         } catch (CancelledKeyException cke) {
             // key has been cancelled we can ignore that.
@@ -429,7 +425,7 @@ final class MonitorThread extends Thread {
                     throw re;
                 }
             } else {
-                log.w("ddms: ignoring duplicate debugger");
+                log.w("ddms", "ignoring duplicate debugger");
                 // new connection already closed
             }
         }
@@ -448,7 +444,10 @@ final class MonitorThread extends Thread {
      * Tell the thread that something has changed.
      */
     private void wakeup() {
-        mSelector.wakeup();
+        // If we didn't started running yet, we might not have a selector set.
+        if (mSelector != null) {
+            mSelector.wakeup();
+        }
     }
 
     /**
@@ -457,6 +456,7 @@ final class MonitorThread extends Thread {
     synchronized void quit() {
         mQuit = true;
         wakeup();
+        log.d("ddms", "Waiting for Monitor thread");
         try {
             // since we're quitting, lets drop all the client and disconnect
             // the DebugSelectedPort
@@ -474,7 +474,9 @@ final class MonitorThread extends Thread {
                 mDebugSelectedChan.socket().close();
                 mDebugSelectedChan = null;
             }
-            mSelector.close();
+            if (mSelector != null) {
+                mSelector.close();
+            }
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -523,7 +525,7 @@ final class MonitorThread extends Thread {
                 }
             } catch (IOException ioe) {
                 // not really expecting this to happen
-                log.e("ddms: addClient error", ioe);
+                ioe.printStackTrace();
             }
         }
     }
@@ -536,7 +538,7 @@ final class MonitorThread extends Thread {
      */
     private boolean reopenDebugSelectedPort() throws IOException {
 
-        log.d("ddms: reopen debug-selected port: " + mNewDebugSelectedPort);
+        Log.d("ddms", "reopen debug-selected port: " + mNewDebugSelectedPort);
         if (mDebugSelectedChan != null) {
             mDebugSelectedChan.close();
         }
@@ -584,7 +586,7 @@ final class MonitorThread extends Thread {
             Debugger dbg = mSelectedClient.getDebugger();
 
             if (dbg != null) {
-                log.d("ddms: Accepting connection on 'debug selected' port");
+                log.d("ddms", "Accepting connection on 'debug selected' port");
                 try {
                     acceptNewDebugger(dbg, acceptChan);
                 } catch (IOException ioe) {
@@ -595,7 +597,7 @@ final class MonitorThread extends Thread {
             }
         }
 
-        log.w("ddms: Connection on 'debug selected' port, but none selected");
+        log.w("ddms", "Connection on 'debug selected' port, but none selected");
         try {
             SocketChannel chan = acceptChan.accept();
             chan.close();
@@ -606,12 +608,14 @@ final class MonitorThread extends Thread {
         }
     }
 
-    private void displayDebugSelectedBindError(int port) {
-        String message = String.format(
-                "Could not open Selected VM debug port (%1$d). Make sure you do not have another instance of DDMS or of the eclipse plugin running. If it's being used by something else, choose a new port number in the preferences.",
-                port);
-        log.e("ddms: " + message);
-        Log.logAndDisplay(LogLevel.ERROR, "ddms", message);
+    private static void displayDebugSelectedBindError(int port) {
+        String message =
+                "Could not open Selected VM debug port ("
+                        + port
+                        + "). Make sure you do not have another instance of Android Studio or the Android plugin running. "
+                        + "If it's being used by something else, choose a new port number in the preferences.";
+
+        log.e("ddms", message);
     }
 
     public DdmJdwpExtension getDdmExtension() {
