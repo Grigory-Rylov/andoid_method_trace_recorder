@@ -127,6 +127,7 @@ final class MonitorThread extends Thread {
 
     /**
      * Sets the client to accept debugger connection on the custom "Selected debug port".
+     *
      * @param selectedClient the client. Can be null.
      */
     synchronized void setSelectedClient(Client selectedClient) {
@@ -456,12 +457,12 @@ final class MonitorThread extends Thread {
     synchronized void quit() {
         mQuit = true;
         wakeup();
-        log.d("ddms: Waiting for Monitor thread");
         try {
             // since we're quitting, lets drop all the client and disconnect
             // the DebugSelectedPort
             synchronized (mClientList) {
                 for (Client c : mClientList) {
+                    log.d("ddms: close client:[pid=" + c.getClientData().getPid() + ", pkg=" + c.getClientData().getPackageName() + ", port=" + c.getDebugger().getListenPort());
                     c.close(false /* notify */);
                     mDdmJdwpExtension.broadcast(DdmJdwpExtension.Event.CLIENT_DISCONNECTED, c);
                 }

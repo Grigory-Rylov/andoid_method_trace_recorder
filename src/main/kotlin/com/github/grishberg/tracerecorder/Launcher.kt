@@ -103,5 +103,7 @@ class Launcher(
         Thread.sleep(duration * 1000L)
 
         recorder.stopRecording()
+        Thread.sleep(500L)
+        recorder.disconnect()
     }
 }

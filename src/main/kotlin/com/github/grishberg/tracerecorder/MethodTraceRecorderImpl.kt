@@ -60,9 +60,8 @@ class MethodTraceRecorderImpl(
     ) {
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
         DdmPreferences.setSelectedDebugPort(debugPort)
-        if (debugPort == 8600) {
-            DdmPreferences.setDebugPortBase(debugPort + 1)
-        }
+        initBaseDebugPort()
+
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
@@ -148,6 +147,27 @@ class MethodTraceRecorderImpl(
         logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
         client?.startSamplingProfiler(samplingIntervalInMicroseconds, TimeUnit.MICROSECONDS)
         listener.onStartedRecording()
+    }
+
+    private fun initBaseDebugPort() {
+        //find at least 10 opened ports
+        var openedPortsCount = 0
+
+        for (port in 8600 until 8698) {
+            if (isPortAlreadyUsed(port)) {
+                openedPortsCount = 0
+                logger.d("$TAG: debug port base $port is busy")
+                continue
+            }
+
+            if (openedPortsCount >= 10) {
+                val firstOpenedPort = port - openedPortsCount
+                logger.d("$TAG: selected debug port base $firstOpenedPort")
+                DdmPreferences.setDebugPortBase(firstOpenedPort)
+                return
+            }
+            openedPortsCount++
+        }
     }
 
     private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
