@@ -31,7 +31,8 @@ class MethodTraceRecorderImpl(
     private val logger: RecorderLogger = NoOpLogger(),
     androidHome: String? = null,
     private val debugPort: Int = 8699,
-    forceNewBridge: Boolean = false
+    forceNewBridge: Boolean = false,
+    private val waitTimeoutInSeconds: Int = 60
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
@@ -70,6 +71,9 @@ class MethodTraceRecorderImpl(
 
         listener.onStartWaitingForDevice()
         waitForDevice(adb)
+        if (!shouldRun) {
+            return
+        }
 
         logger.d("$TAG: fetching devices")
         val devices = adb.getDevices()
@@ -93,6 +97,9 @@ class MethodTraceRecorderImpl(
         }
         listener.onStartWaitingForApplication()
         waitForApplication(adb, device, packageName)
+        if (!shouldRun) {
+            return
+        }
 
         client = device.getClient(packageName)
         logger.d("$TAG: got client $client")
@@ -210,7 +217,7 @@ class MethodTraceRecorderImpl(
                 count++
             } catch (ignored: InterruptedException) {
             }
-            if (count > 100) {
+            if (count > waitTimeoutInSeconds * 10) {
                 adb.stop()
                 throw DeviceTimeoutException()
             }
@@ -227,7 +234,7 @@ class MethodTraceRecorderImpl(
                 count++
             } catch (ignored: InterruptedException) {
             }
-            if (count > 100) {
+            if (count > waitTimeoutInSeconds * 10) {
                 adb.stop()
                 throw AppTimeoutException(packageName)
             }
