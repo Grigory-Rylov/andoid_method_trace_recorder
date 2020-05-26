@@ -1,9 +1,6 @@
 package com.github.grishberg.tracerecorder
 
-import com.android.ddmlib.Client
-import com.android.ddmlib.ClientData
-import com.android.ddmlib.DdmPreferences
-import com.android.ddmlib.IDevice
+import com.android.ddmlib.*
 import com.github.grishberg.tracerecorder.adb.AdbWrapper
 import com.github.grishberg.tracerecorder.adb.AdbWrapperImpl
 import com.github.grishberg.tracerecorder.adb.ShellOutputReceiver
@@ -33,13 +30,16 @@ class MethodTraceRecorderImpl(
     private val systrace: Boolean,
     private val logger: RecorderLogger = NoOpLogger(),
     androidHome: String? = null,
-    private val debugPort: Int = 8600,
+    private val debugPort: Int = 8699,
     forceNewBridge: Boolean = false
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
     private var shouldRun: Boolean = false
 
+    init {
+        MonitorThreadLoggerBridge.setLogger(logger);
+    }
 
     @Throws(MethodTraceRecordException::class)
     override fun startRecording(
@@ -59,6 +59,9 @@ class MethodTraceRecorderImpl(
     ) {
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
         DdmPreferences.setSelectedDebugPort(debugPort)
+        if (debugPort == 8600) {
+            DdmPreferences.setDebugPortBase(debugPort + 1)
+        }
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
@@ -216,7 +219,7 @@ class MethodTraceRecorderImpl(
 
     @Throws(AppTimeoutException::class)
     private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String) {
-        logger.d("$TAG: waitForApplication pkg= $packageName, device=$device")
+        logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
         var count = 0
         while (device.getClient(packageName) == null && shouldRun) {
             try {

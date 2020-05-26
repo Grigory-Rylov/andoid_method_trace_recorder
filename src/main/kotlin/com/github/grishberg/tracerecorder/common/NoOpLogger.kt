@@ -6,4 +6,6 @@ class NoOpLogger : RecorderLogger {
     override fun e(s: String) = Unit
 
     override fun e(msg: String, t: Throwable) = Unit
+
+    override fun w(msg: String) = Unit
 }
