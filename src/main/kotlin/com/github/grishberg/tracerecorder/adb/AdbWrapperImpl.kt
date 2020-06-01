@@ -3,6 +3,8 @@ package com.github.grishberg.tracerecorder.adb
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.github.grishberg.tracerecorder.common.RecorderLogger
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.util.*
 
 private const val TAG = "AdbWrapperImpl"
@@ -33,6 +35,11 @@ class AdbWrapperImpl(
         logger.d("$TAG: connected, bridge=$bridge")
     }
 
+    override fun connect(remote: String) {
+        adbWificonnect(remote)
+        connect()
+    }
+
     override fun isConnected(): Boolean {
         return bridge?.isConnected ?: false
     }
@@ -50,5 +57,27 @@ class AdbWrapperImpl(
         bridge = null
         AndroidDebugBridge.disconnectBridge()
         AndroidDebugBridge.terminate()
+    }
+
+    private fun adbWificonnect(ipAddress: String): Boolean {
+        var connected = false
+        logger.d("$TAG: connect to $ipAddress...")
+
+        val process = Runtime.getRuntime().exec(androidSdkPath + "adb connect " + ipAddress)
+        val inBuffer = BufferedReader(InputStreamReader(process.inputStream))
+        var line: String?
+        var message: String? = null
+        while (inBuffer.readLine().also { line = it } != null) {
+            if (line!!.contains("connected")) {
+                connected = true
+            }
+            message = line
+        }
+        if (connected) {
+            logger.d("$TAG: $message")
+            return true
+        }
+
+        return false
     }
 }
