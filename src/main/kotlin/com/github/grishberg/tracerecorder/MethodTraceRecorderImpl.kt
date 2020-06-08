@@ -252,11 +252,11 @@ class MethodTraceRecorderImpl(
         var count = 0
         while (device.getClient(packageName) == null && shouldRun) {
             try {
-                Thread.sleep(100)
+                Thread.sleep(10)
                 count++
             } catch (ignored: InterruptedException) {
             }
-            if (count > timeoutInSeconds * 10) {
+            if (count > timeoutInSeconds * 100) {
                 adb.stop()
                 throw AppTimeoutException(packageName)
             }
