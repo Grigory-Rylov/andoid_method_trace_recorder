@@ -8,11 +8,11 @@ import com.github.grishberg.tracerecorder.exceptions.StartActivityException
 private const val ERROR_PREFIX = "Error: "
 
 class ShellOutputReceiver(
-    private val log: RecorderLogger,
-    private val listener: MethodTraceEventListener
+    private val log: RecorderLogger
 ) : MultiLineReceiver() {
     private var state: State = Idle()
     private var isCancelled = false
+    var lastException: Throwable? = null
 
     override fun processNewLines(lines: Array<out String>) {
         for (line in lines) {
@@ -29,8 +29,10 @@ class ShellOutputReceiver(
         override fun processLine(line: String) {
             val errorPos = line.indexOf(ERROR_PREFIX)
             if (errorPos >= 0) {
-                listener.fail(StartActivityException(line.substring(errorPos + ERROR_PREFIX.length)))
                 isCancelled = true
+                val ex = StartActivityException(line.substring(errorPos + ERROR_PREFIX.length))
+                lastException = ex
+                throw ex
             }
         }
     }
