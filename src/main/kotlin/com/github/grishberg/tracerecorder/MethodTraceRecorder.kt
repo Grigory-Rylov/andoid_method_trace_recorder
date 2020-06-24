@@ -33,4 +33,9 @@ interface MethodTraceRecorder {
      * Force disconnect adb.
      */
     fun disconnect()
+
+    /**
+     * Connect to adb and disconnect immediately.
+     */
+    fun reconnect()
 }

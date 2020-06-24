@@ -223,6 +223,11 @@ class MethodTraceRecorderImpl(
         adb.stop()
     }
 
+    override fun reconnect() {
+        adb.connect()
+        adb.stop()
+    }
+
     @Throws(DeviceTimeoutException::class)
     private fun waitForDevices(adb: AdbWrapper) {
         logger.d("$TAG: waitForDevice")
