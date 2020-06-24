@@ -32,7 +32,8 @@ class MethodTraceRecorderImpl(
     androidHome: String? = null,
     private val debugPort: Int = 8699,
     forceNewBridge: Boolean = false,
-    private val waitTimeoutInSeconds: Int = 60
+    private val waitForDeviceTimeoutInSeconds: Int = 60,
+    private val waitForApplicationimeoutInSeconds: Int = 60
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
@@ -90,41 +91,26 @@ class MethodTraceRecorderImpl(
             return
         }
 
-        tryToRecordSamplingProfile(device, packageName, outputFileName, samplingIntervalInMicroseconds)
+        listener.onStartWaitingForApplication()
+        waitForApplication(adb, device, packageName, waitForApplicationimeoutInSeconds)
+        recordSamplingProfile(device, packageName, outputFileName, samplingIntervalInMicroseconds)
     }
 
-    private fun tryToRecordSamplingProfile(
-        device: IDevice,
-        packageName: String,
-        outputFileName: String,
-        samplingIntervalInMicroseconds: Int
-    ) {
-        listener.onStartWaitingForApplication()
-
-        for (i in 0 until 3) {
-            val reconnectedDevice: IDevice
-            if (!adb.isConnected()) {
-                adb.connect()
-                waitForDevices(adb)
-                val devices = fetchDevices()
-                reconnectedDevice = devices.first()
-            } else {
-                reconnectedDevice = device
-            }
-
-            if (!shouldRun) {
-                return
-            }
+    @Throws(AppTimeoutException::class)
+    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
+        logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
+        var count = 0
+        while (device.getClient(packageName) == null && shouldRun) {
             try {
-                waitForApplication(adb, reconnectedDevice, packageName, 20)
-                recordSamplingProfile(reconnectedDevice, packageName, outputFileName, samplingIntervalInMicroseconds)
-                return
-            } catch (e: AppTimeoutException) {
-                logger.e("$TAG timeout while waiting for $packageName")
+                Thread.sleep(10)
+                count++
+            } catch (ignored: InterruptedException) {
+            }
+            if (count > timeoutInSeconds * 100) {
                 adb.stop()
+                throw AppTimeoutException(packageName)
             }
         }
-        throw AppTimeoutException(packageName)
     }
 
     private fun recordSamplingProfile(
@@ -176,7 +162,7 @@ class MethodTraceRecorderImpl(
         device.executeShellCommand(command, outputReceiver)
         if (outputReceiver.lastException != null) {
             shouldRun = false
-            logger.d("$TAG: startActivity cmd='$command', device=$device ended with exception ${outputReceiver.lastException}" )
+            logger.d("$TAG: startActivity cmd='$command', device=$device ended with exception ${outputReceiver.lastException}")
         }
     }
 
@@ -244,26 +230,9 @@ class MethodTraceRecorderImpl(
                 count++
             } catch (ignored: InterruptedException) {
             }
-            if (count > waitTimeoutInSeconds * 10) {
+            if (count > waitForDeviceTimeoutInSeconds * 10) {
                 adb.stop()
                 throw DeviceTimeoutException()
-            }
-        }
-    }
-
-    @Throws(AppTimeoutException::class)
-    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
-        logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
-        var count = 0
-        while (device.getClient(packageName) == null && shouldRun) {
-            try {
-                Thread.sleep(10)
-                count++
-            } catch (ignored: InterruptedException) {
-            }
-            if (count > timeoutInSeconds * 100) {
-                adb.stop()
-                throw AppTimeoutException(packageName)
             }
         }
     }
