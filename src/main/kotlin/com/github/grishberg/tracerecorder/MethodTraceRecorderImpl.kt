@@ -37,6 +37,8 @@ class MethodTraceRecorderImpl(
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
+
+    @Volatile
     private var shouldRun: Boolean = false
 
     init {
@@ -217,6 +219,7 @@ class MethodTraceRecorderImpl(
      */
     override fun disconnect() {
         logger.d("$TAG disconnect")
+        shouldRun = false
         adb.stop()
     }
 
