@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.Grigory-Rylov'
-version '1.4.16'
+version '1.4.17'
 
 sourceCompatibility = 1.8
 

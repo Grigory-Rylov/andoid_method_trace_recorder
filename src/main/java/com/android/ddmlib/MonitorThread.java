@@ -461,7 +461,14 @@ final class MonitorThread extends Thread {
             // the DebugSelectedPort
             synchronized (mClientList) {
                 for (Client c : mClientList) {
-                    log.d("ddms: close client:[pid=" + c.getClientData().getPid() + ", pkg=" + c.getClientData().getPackageName() + ", port=" + c.getDebugger().getListenPort());
+                    int pid = -1;
+                    String pkgName = "";
+                    int listenPort = c.getDebugger() != null ? c.getDebugger().getListenPort() : -1;
+                    if (c.getClientData() != null) {
+                        pid = c.getClientData().getPid();
+                        pkgName = c.getClientData().getPackageName();
+                    }
+                    log.d("ddms: close client:[pid=" + pid + ", pkg=" + pkgName + ", port=" + listenPort);
                     c.close(false /* notify */);
                     mDdmJdwpExtension.broadcast(DdmJdwpExtension.Event.CLIENT_DISCONNECTED, c);
                 }
