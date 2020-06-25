@@ -43,6 +43,7 @@ class MethodTraceRecorderImpl(
 
     init {
         MonitorThreadLoggerBridge.setLogger(logger);
+        DdmPreferences.setSelectedDebugPort(debugPort)
     }
 
     @Throws(MethodTraceRecordException::class)
@@ -62,7 +63,6 @@ class MethodTraceRecorderImpl(
         samplingIntervalInMicroseconds: Int
     ) {
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
-        DdmPreferences.setSelectedDebugPort(debugPort)
         initBaseDebugPort()
 
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
