@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit
  */
 private const val TAG = "MethodTraceRecorderImpl"
 
+
 class MethodTraceRecorderImpl(
     private val listener: MethodTraceEventListener,
     private val methodTrace: Boolean,
@@ -37,6 +38,7 @@ class MethodTraceRecorderImpl(
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
+    private var measureStrategy: MeasureStrategy = SamplingMeasure()
 
     @Volatile
     private var shouldRun: Boolean = false
@@ -50,9 +52,10 @@ class MethodTraceRecorderImpl(
     override fun startRecording(
         outputFileName: String,
         packageName: String,
-        startActivityName: String?
+        startActivityName: String?,
+        mode: RecordMode
     ) {
-        startRecording(outputFileName, packageName, startActivityName, 1)
+        startRecording(outputFileName, packageName, startActivityName, mode, 1)
     }
 
     @Throws(MethodTraceRecordException::class)
@@ -60,8 +63,11 @@ class MethodTraceRecorderImpl(
         outputFileName: String,
         packageName: String,
         startActivityName: String?,
+        mode: RecordMode,
         samplingIntervalInMicroseconds: Int
     ) {
+        measureStrategy = if (mode == RecordMode.METHOD_SAMPLE) SamplingMeasure() else TracerRecording()
+
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
         initBaseDebugPort()
 
@@ -131,7 +137,7 @@ class MethodTraceRecorderImpl(
         ClientData.setMethodProfilingHandler(MethodProfilingHandler(logger, listener, outputFileName, adb))
 
         logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
-        client?.startSamplingProfiler(samplingIntervalInMicroseconds, TimeUnit.MICROSECONDS)
+        measureStrategy.startRecording(samplingIntervalInMicroseconds)
         listener.onStartedRecording()
     }
 
@@ -181,7 +187,7 @@ class MethodTraceRecorderImpl(
         logger.d("$TAG stopRecording, methodTrace=$methodTrace")
         shouldRun = false
         if (methodTrace) {
-            client?.stopSamplingProfiler()
+            measureStrategy.stopRecording()
         }
 
         if (!systrace) {
@@ -300,5 +306,30 @@ class MethodTraceRecorderImpl(
             adb.stop()
             listener.fail(EndFailureException("onEndFailure: $client $message"))
         }
+    }
+
+    private inner class SamplingMeasure : MeasureStrategy {
+        override fun startRecording(interval: Int) {
+            client?.startSamplingProfiler(interval, TimeUnit.MICROSECONDS)
+        }
+
+        override fun stopRecording() {
+            client?.stopSamplingProfiler()
+        }
+    }
+
+    private inner class TracerRecording : MeasureStrategy {
+        override fun startRecording(interval: Int) {
+            client?.startMethodTracer()
+        }
+
+        override fun stopRecording() {
+            client?.stopMethodTracer()
+        }
+    }
+
+    private interface MeasureStrategy {
+        fun startRecording(interval: Int)
+        fun stopRecording()
     }
 }

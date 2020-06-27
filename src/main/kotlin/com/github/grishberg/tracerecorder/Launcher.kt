@@ -94,7 +94,7 @@ class Launcher(
             ConsoleLogger()
         )
         try {
-            recorder.startRecording(outputFileName, packageName, activity)
+            recorder.startRecording(outputFileName, packageName, activity, RecordMode.METHOD_SAMPLE)
         } catch (e: MethodTraceRecordException) {
             println(e.message)
             exitProcess(1)
