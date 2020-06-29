@@ -43,14 +43,9 @@ interface MethodTraceRecorder {
         packageName: String,
         startActivityName: String?,
         mode: RecordMode,
-        samplingIntervalInMicroseconds: Int = 60
+        samplingIntervalInMicroseconds: Int = 60,
+        profilerBufferSizeInMb: Int = 8
     )
-
-    /**
-     * Same as method above but samplingInterval is 1
-     */
-    @Throws(MethodTraceRecordException::class)
-    fun startRecording(outputFileName: String, packageName: String, startActivityName: String?, mode: RecordMode)
 
     /**
      * Stops recoding.

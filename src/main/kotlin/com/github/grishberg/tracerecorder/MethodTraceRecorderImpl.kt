@@ -53,18 +53,9 @@ class MethodTraceRecorderImpl(
         outputFileName: String,
         packageName: String,
         startActivityName: String?,
-        mode: RecordMode
-    ) {
-        startRecording(outputFileName, packageName, startActivityName, mode, 1)
-    }
-
-    @Throws(MethodTraceRecordException::class)
-    override fun startRecording(
-        outputFileName: String,
-        packageName: String,
-        startActivityName: String?,
         mode: RecordMode,
-        samplingIntervalInMicroseconds: Int
+        samplingIntervalInMicroseconds: Int,
+        profilerBufferSizeInMb: Int
     ) {
         measureStrategy = if (mode == RecordMode.METHOD_SAMPLE) SamplingMeasure() else TracerRecording()
 
@@ -74,6 +65,8 @@ class MethodTraceRecorderImpl(
         if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
             throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
         }
+        DdmPreferences.setProfilerBufferSizeMb(profilerBufferSizeInMb)
+
         adb.connect()
         shouldRun = true
 
