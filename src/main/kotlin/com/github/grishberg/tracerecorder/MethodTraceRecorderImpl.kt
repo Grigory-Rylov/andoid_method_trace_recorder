@@ -34,7 +34,6 @@ class MethodTraceRecorderImpl(
     private val debugPort: Int = 8699,
     forceNewBridge: Boolean = false,
     private val waitForDeviceTimeoutInSeconds: Int = 60,
-    private val waitForApplicationimeoutInSeconds: Int = 60,
     private val applicationWaitPostTimeoutInMilliseconds: Long = 10
 ) : MethodTraceRecorder {
     private var client: Client? = null
@@ -56,7 +55,8 @@ class MethodTraceRecorderImpl(
         startActivityName: String?,
         mode: RecordMode,
         samplingIntervalInMicroseconds: Int,
-        profilerBufferSizeInMb: Int
+        profilerBufferSizeInMb: Int,
+        waitForApplicationTimeoutInSeconds: Int
     ) {
         measureStrategy = if (mode == RecordMode.METHOD_SAMPLE) SamplingMeasure() else TracerRecording()
 
@@ -94,7 +94,7 @@ class MethodTraceRecorderImpl(
         }
 
         listener.onStartWaitingForApplication()
-        waitForApplication(adb, device, packageName, waitForApplicationimeoutInSeconds)
+        waitForApplication(adb, device, packageName, waitForApplicationTimeoutInSeconds)
         recordSamplingProfile(device, packageName, outputFileName, samplingIntervalInMicroseconds)
     }
 

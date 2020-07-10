@@ -44,8 +44,8 @@ interface MethodTraceRecorder {
         startActivityName: String?,
         mode: RecordMode,
         samplingIntervalInMicroseconds: Int = 60,
-        profilerBufferSizeInMb: Int = 40
-    )
+        profilerBufferSizeInMb: Int = 40,
+        waitForApplicationTimeoutInSeconds: Int = 60)
 
     /**
      * Stops recoding.
