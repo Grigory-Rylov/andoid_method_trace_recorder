@@ -102,6 +102,7 @@ class MethodTraceRecorderImpl(
         logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
         val startTime = System.currentTimeMillis()
         while (device.getClient(packageName) == null && shouldRun) {
+            Thread.sleep(0,500)
             val elapsedTimeInMs = System.currentTimeMillis() - startTime
             if (elapsedTimeInMs > timeoutInSeconds * 1000) {
                 adb.stop()
