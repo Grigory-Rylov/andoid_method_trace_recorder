@@ -14,6 +14,7 @@ private const val ACTIVITY_OPT_NAME = "a"
 private const val OUTPUT_FILE_NAME_OPT_NAME = "o"
 private const val ENABLE_SYSTRACE = "s"
 private const val ENABLE_METHOD_TRACING = "m"
+private const val RECORDING_MODE = "mode"
 
 class Launcher(
     private val args: Array<String>
@@ -26,6 +27,7 @@ class Launcher(
         options.addOption(OUTPUT_FILE_NAME_OPT_NAME, "outFile", true, "Output trace file name")
         options.addOption(ENABLE_SYSTRACE, "systrace", false, "Should record systrace")
         options.addOption(ENABLE_METHOD_TRACING, "methods", false, "Should record method tracing")
+        options.addOption(RECORDING_MODE, "recording_mode", true, "Record mode sample/trace, sample as default")
 
         val parser = DefaultParser()
         val formatter = HelpFormatter()
@@ -47,6 +49,7 @@ class Launcher(
         var outputFileName = cmd.getOptionValue(OUTPUT_FILE_NAME_OPT_NAME)
         val methodTrace = cmd.hasOption(ENABLE_METHOD_TRACING)
         val systrace = cmd.hasOption(ENABLE_SYSTRACE)
+        val isSampleMode = "trace" != cmd.getOptionValue(RECORDING_MODE)
 
         if (!methodTrace && !systrace) {
             println("You must enter at least -m or -s argument.")
@@ -94,7 +97,12 @@ class Launcher(
             ConsoleLogger()
         )
         try {
-            recorder.startRecording(outputFileName, packageName, activity, RecordMode.METHOD_SAMPLE)
+            recorder.startRecording(
+                outputFileName,
+                packageName,
+                activity,
+                if (isSampleMode) RecordMode.METHOD_SAMPLE else RecordMode.METHOD_TRACES
+            )
         } catch (e: MethodTraceRecordException) {
             println(e.message)
             exitProcess(1)

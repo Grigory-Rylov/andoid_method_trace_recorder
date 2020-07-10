@@ -34,7 +34,8 @@ class MethodTraceRecorderImpl(
     private val debugPort: Int = 8699,
     forceNewBridge: Boolean = false,
     private val waitForDeviceTimeoutInSeconds: Int = 60,
-    private val waitForApplicationimeoutInSeconds: Int = 60
+    private val waitForApplicationimeoutInSeconds: Int = 60,
+    private val applicationWaitPostTimeoutInMilliseconds: Long = 10
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
@@ -101,14 +102,16 @@ class MethodTraceRecorderImpl(
     private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
         logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
         val startTime = System.currentTimeMillis()
+        var count = 0
         while (device.getClient(packageName) == null && shouldRun) {
-            Thread.sleep(0,500)
             val elapsedTimeInMs = System.currentTimeMillis() - startTime
+            count++
             if (elapsedTimeInMs > timeoutInSeconds * 1000) {
                 adb.stop()
                 throw AppTimeoutException(packageName)
             }
         }
+        Thread.sleep(applicationWaitPostTimeoutInMilliseconds)
     }
 
     private fun recordSamplingProfile(

@@ -44,7 +44,7 @@ interface MethodTraceRecorder {
         startActivityName: String?,
         mode: RecordMode,
         samplingIntervalInMicroseconds: Int = 60,
-        profilerBufferSizeInMb: Int = 8
+        profilerBufferSizeInMb: Int = 40
     )
 
     /**
