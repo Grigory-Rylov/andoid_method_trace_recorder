@@ -100,14 +100,10 @@ class MethodTraceRecorderImpl(
     @Throws(AppTimeoutException::class)
     private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
         logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
-        var count = 0
+        val startTime = System.currentTimeMillis()
         while (device.getClient(packageName) == null && shouldRun) {
-            try {
-                Thread.sleep(10)
-                count++
-            } catch (ignored: InterruptedException) {
-            }
-            if (count > timeoutInSeconds * 100) {
+            val elapsedTimeInMs = System.currentTimeMillis() - startTime
+            if (elapsedTimeInMs > timeoutInSeconds * 1000) {
                 adb.stop()
                 throw AppTimeoutException(packageName)
             }
