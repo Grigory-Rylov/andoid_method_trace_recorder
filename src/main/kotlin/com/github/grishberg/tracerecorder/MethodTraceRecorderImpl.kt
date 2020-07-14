@@ -56,7 +56,8 @@ class MethodTraceRecorderImpl(
         mode: RecordMode,
         samplingIntervalInMicroseconds: Int,
         profilerBufferSizeInMb: Int,
-        waitForApplicationTimeoutInSeconds: Int
+        waitForApplicationTimeoutInSeconds: Int,
+        remoteDeviceAddress: String?
     ) {
         measureStrategy = if (mode == RecordMode.METHOD_SAMPLE) SamplingMeasure() else TracerRecording()
 
@@ -68,7 +69,11 @@ class MethodTraceRecorderImpl(
         }
         DdmPreferences.setProfilerBufferSizeMb(profilerBufferSizeInMb)
 
-        adb.connect()
+        if (remoteDeviceAddress != null) {
+            adb.connect(remoteDeviceAddress)
+        } else {
+            adb.connect()
+        }
         shouldRun = true
 
         listener.onStartWaitingForDevice()
@@ -222,8 +227,12 @@ class MethodTraceRecorderImpl(
         adb.stop()
     }
 
-    override fun reconnect() {
-        adb.connect()
+    override fun reconnect(remoteDeviceAddress: String?) {
+        if (remoteDeviceAddress != null) {
+            adb.connect(remoteDeviceAddress)
+        } else {
+            adb.connect()
+        }
         adb.stop()
     }
 

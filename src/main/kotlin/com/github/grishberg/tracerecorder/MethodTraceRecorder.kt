@@ -45,7 +45,8 @@ interface MethodTraceRecorder {
         mode: RecordMode,
         samplingIntervalInMicroseconds: Int = 60,
         profilerBufferSizeInMb: Int = 40,
-        waitForApplicationTimeoutInSeconds: Int = 60)
+        waitForApplicationTimeoutInSeconds: Int = 60,
+        remoteDeviceAddress: String? = null)
 
     /**
      * Stops recoding.
@@ -60,5 +61,5 @@ interface MethodTraceRecorder {
     /**
      * Connect to adb and disconnect immediately.
      */
-    fun reconnect()
+    fun reconnect(remoteDeviceAddress: String? = null)
 }
