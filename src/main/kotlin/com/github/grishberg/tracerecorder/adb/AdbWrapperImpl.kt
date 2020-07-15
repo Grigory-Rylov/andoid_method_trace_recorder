@@ -25,7 +25,7 @@ class AdbWrapperImpl(
             stop()
         }
 
-        AndroidDebugBridge.init(clientSupport)
+        AndroidDebugBridge.initIfNeeded(clientSupport)
 
         logger.d("$TAG: creating ADB bridge with android_home=$androidSdkPath")
         if (androidSdkPath != null) {
