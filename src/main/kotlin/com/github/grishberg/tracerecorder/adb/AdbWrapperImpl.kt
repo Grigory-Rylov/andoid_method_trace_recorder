@@ -4,6 +4,7 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.github.grishberg.tracerecorder.common.RecorderLogger
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 
@@ -28,7 +29,8 @@ class AdbWrapperImpl(
 
         logger.d("$TAG: creating ADB bridge with android_home=$androidSdkPath")
         if (androidSdkPath != null) {
-            bridge = AndroidDebugBridge.createBridge("$androidSdkPath/platform-tools/adb", forceNewBridge)
+            val adbPath = File(androidSdkPath, "platform-tools/adb").absolutePath
+            bridge = AndroidDebugBridge.createBridge(adbPath, forceNewBridge)
         } else {
             bridge = AndroidDebugBridge.createBridge()
         }
@@ -63,7 +65,8 @@ class AdbWrapperImpl(
         var connected = false
         logger.d("$TAG: connect to $ipAddress...")
 
-        val process = Runtime.getRuntime().exec(androidSdkPath + "adb connect " + ipAddress)
+        val process =
+            Runtime.getRuntime().exec(File(androidSdkPath, "platform-tools/adb").absolutePath + " connect " + ipAddress)
         val inBuffer = BufferedReader(InputStreamReader(process.inputStream))
         var line: String?
         var message: String? = null
