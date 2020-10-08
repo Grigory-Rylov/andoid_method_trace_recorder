@@ -213,7 +213,8 @@ class MethodTraceRecorderImpl(
         logger.d("$TAG stopTrace, device=$device")
         val command = "atrace --async_stop"
         val traceParser = TraceParser(logger)
-        device.executeShellCommand(command, traceParser)
+        device.executeShellCommand("atrace --async_dump", traceParser)
+        device.executeShellCommand(command, TraceParser(NoOpLogger()))
         val values = traceParser.values
         listener.onSystraceReceived(values)
     }

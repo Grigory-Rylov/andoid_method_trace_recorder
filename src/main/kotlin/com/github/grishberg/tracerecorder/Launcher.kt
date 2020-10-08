@@ -19,6 +19,12 @@ private const val RECORDING_MODE = "mode"
 class Launcher(
     private val args: Array<String>
 ) {
+    @Volatile
+    var shouldWaitForSystrace = false
+
+    @Volatile
+    var shouldWaitForMethodTrace = false
+
     fun launch(): Int {
         val options = Options()
         options.addRequiredOption(PACKAGE_OPT_NAME, "package", true, "Target application package")
@@ -60,6 +66,8 @@ class Launcher(
             val formattedTime = sdf.format(Date())
             outputFileName = "trace-$formattedTime.trace"
         }
+        shouldWaitForSystrace = systrace
+        shouldWaitForMethodTrace = methodTrace
 
         val listener = object : MethodTraceEventListener {
             override fun onStartedRecording() {
@@ -68,12 +76,18 @@ class Launcher(
 
             override fun onMethodTraceReceived(traceFile: File) {
                 println("trace file saved at $traceFile")
-                exitProcess(0)
+                shouldWaitForMethodTrace = false
+                if (!shouldWaitForSystrace) {
+                    exitProcess(0)
+                }
             }
 
             override fun onMethodTraceReceived(remoteFilePath: String) {
                 println("trace file saved in remote device at $remoteFilePath")
-                exitProcess(0)
+                shouldWaitForSystrace = false
+                if (!shouldWaitForMethodTrace) {
+                    exitProcess(0)
+                }
             }
 
             override fun fail(throwable: Throwable) {
