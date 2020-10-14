@@ -192,10 +192,14 @@ class MethodTraceRecorderImpl(
             return
         }
 
-        val devices = fetchDevices()
-        val device = devices.first()
+        try {
+            val devices = fetchDevices()
+            val device = devices.first()
 
-        stopTrace(device)
+            stopTrace(device)
+        } catch (e: Throwable) {
+            logger.e("Error while try stop trace: ${e.message}", e)
+        }
 
     }
 
