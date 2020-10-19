@@ -1,5 +1,10 @@
 package com.github.grishberg.tracerecorder
 
+data class SystraceRecordResult(
+    val records: List<SystraceRecord>,
+    val parentTs: Double
+)
+
 data class SystraceRecord(
     val name: String,
     val cpu: String,

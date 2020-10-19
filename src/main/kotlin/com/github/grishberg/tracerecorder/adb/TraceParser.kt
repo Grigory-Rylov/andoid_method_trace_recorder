@@ -9,6 +9,8 @@ import java.util.*
 private const val BEGIN_TRACE =
     "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\s\\w+\\:\\sB\\|\\d+\\|(.+)"
 private const val END_TRACE = "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\s\\w+\\:\\sE"
+private const val PARENT_TS_TRACE =
+    "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\s\\w+\\:\\strace_event_clock_sync:\\sparent_ts=(\\d+\\.\\d+)"
 
 /**
  * Systrace parser.
@@ -18,6 +20,9 @@ class TraceParser(
 ) : MultiLineReceiver() {
     private val records = Stack<SystraceRecord>()
     private val _values = mutableListOf<SystraceRecord>()
+
+    var parentTs: Double = 0.0
+        private set
 
     val values: List<SystraceRecord>
         get() = _values.toList()
@@ -30,6 +35,7 @@ class TraceParser(
         }
         val beginTracePattern = BEGIN_TRACE.toRegex()
         val endTracePattern = END_TRACE.toRegex()
+        val parentTsPatter = PARENT_TS_TRACE.toRegex()
 
         for (line in lines) {
             logger.d(line)
@@ -39,6 +45,11 @@ class TraceParser(
 
             if (line.startsWith("#")) {
                 continue
+            }
+
+            val offsetResult = parentTsPatter.find(line)
+            if (offsetResult != null) {
+                parentTs = offsetResult.groupValues[3].toDouble()
             }
 
             val beginResult = beginTracePattern.find(line)

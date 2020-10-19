@@ -95,8 +95,10 @@ class Launcher(
                 exitProcess(1)
             }
 
-            override fun onSystraceReceived(values: List<SystraceRecord>) {
-                println("SYSTRACE:")
+            override fun onSystraceReceived(result: SystraceRecordResult) {
+                val values = result.records
+
+                println("SYSTRACE: parent_ts = ${result.parentTs}")
                 for (record in values) {
                     println("${record.name} - ${String.format("%.06f", (record.endTime - record.startTime) * 1000)} ms")
                 }

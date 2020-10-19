@@ -8,6 +8,6 @@ interface MethodTraceEventListener {
     fun onStartWaitingForApplication() = Unit
     fun onMethodTraceReceived(traceFile: File)
     fun onMethodTraceReceived(remoteFilePath: String)
-    fun onSystraceReceived(values: List<SystraceRecord>)
+    fun onSystraceReceived(result: SystraceRecordResult)
     fun fail(throwable: Throwable)
 }
