@@ -219,7 +219,13 @@ class MethodTraceRecorderImpl(
         val traceParser = TraceParser(logger)
         device.executeShellCommand("atrace --async_dump", traceParser)
         device.executeShellCommand(command, TraceParser(NoOpLogger()))
-        listener.onSystraceReceived(SystraceRecordResult(traceParser.values, traceParser.parentTs))
+        listener.onSystraceReceived(
+            SystraceRecordResult(
+                traceParser.values,
+                traceParser.startOffset,
+                traceParser.parentTs
+            )
+        )
     }
 
     /**

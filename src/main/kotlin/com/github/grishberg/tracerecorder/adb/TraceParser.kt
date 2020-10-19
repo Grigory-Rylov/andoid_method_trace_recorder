@@ -21,6 +21,8 @@ class TraceParser(
     private val records = Stack<SystraceRecord>()
     private val _values = mutableListOf<SystraceRecord>()
 
+    var startOffset: Double = 0.0
+        private set
     var parentTs: Double = 0.0
         private set
 
@@ -49,6 +51,7 @@ class TraceParser(
 
             val offsetResult = parentTsPatter.find(line)
             if (offsetResult != null) {
+                startOffset = offsetResult.groupValues[2].toDouble()
                 parentTs = offsetResult.groupValues[3].toDouble()
             }
 

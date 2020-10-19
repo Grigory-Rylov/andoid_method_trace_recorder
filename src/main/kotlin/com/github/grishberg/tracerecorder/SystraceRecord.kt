@@ -2,6 +2,7 @@ package com.github.grishberg.tracerecorder
 
 data class SystraceRecordResult(
     val records: List<SystraceRecord>,
+    val startOffset: Double,
     val parentTs: Double
 )
 
