@@ -1,20 +1,19 @@
 package com.github.grishberg.tracerecorder.adb
 
-import com.android.ddmlib.MultiLineReceiver
-import com.github.grishberg.tracerecorder.MethodTraceEventListener
-import com.github.grishberg.tracerecorder.common.RecorderLogger
+import com.github.grishberg.android.adb.AdbLogger
+import com.github.grishberg.android.adb.MultiLineShellOutReceiver
 import com.github.grishberg.tracerecorder.exceptions.StartActivityException
 
 private const val ERROR_PREFIX = "Error: "
 
 class ShellOutputReceiver(
-    private val log: RecorderLogger
-) : MultiLineReceiver() {
+    private val log: AdbLogger
+) : MultiLineShellOutReceiver() {
     private var state: State = Idle()
     private var isCancelled = false
     var lastException: Throwable? = null
 
-    override fun processNewLines(lines: Array<out String>) {
+    override fun processNewLines(lines: Array<String>) {
         for (line in lines) {
             log.d(line)
             state.processLine(line)

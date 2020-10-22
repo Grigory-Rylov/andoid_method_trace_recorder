@@ -5,10 +5,7 @@ Used to record method `.trace` files which can be opened in [Android Trace Viewe
 
 # CLI Usage
 
-```
-java -jar trace-recorder.java -p <package> [-m] [-s] [-a <activity>] [-o <output_file_name>]
-
-```
+[CLI.MD]
 
 # Usage in code
 

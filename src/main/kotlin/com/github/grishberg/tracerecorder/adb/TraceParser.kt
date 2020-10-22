@@ -1,8 +1,8 @@
 package com.github.grishberg.tracerecorder.adb
 
-import com.android.ddmlib.MultiLineReceiver
+import com.github.grishberg.android.adb.AdbLogger
+import com.github.grishberg.android.adb.MultiLineShellOutReceiver
 import com.github.grishberg.tracerecorder.SystraceRecord
-import com.github.grishberg.tracerecorder.common.RecorderLogger
 import java.util.*
 
 
@@ -16,8 +16,8 @@ private const val PARENT_TS_TRACE =
  * Systrace parser.
  */
 class TraceParser(
-    private val logger: RecorderLogger
-) : MultiLineReceiver() {
+    private val logger: AdbLogger
+) : MultiLineShellOutReceiver() {
     private val records = Stack<SystraceRecord>()
     private val _values = mutableListOf<SystraceRecord>()
 
@@ -29,7 +29,7 @@ class TraceParser(
     val values: List<SystraceRecord>
         get() = _values.toList()
 
-    override fun processNewLines(lines: Array<out String>) {
+    override fun processNewLines(lines: Array<String>) {
         records.clear()
 
         if (lines.size <= 1) {

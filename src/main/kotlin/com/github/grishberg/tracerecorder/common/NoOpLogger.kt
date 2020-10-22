@@ -1,6 +1,8 @@
 package com.github.grishberg.tracerecorder.common
 
-class NoOpLogger : RecorderLogger {
+import com.github.grishberg.android.adb.AdbLogger
+
+class NoOpLogger : AdbLogger {
     override fun d(msg: String) = Unit
 
     override fun e(s: String) = Unit

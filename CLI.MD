@@ -1,4 +1,15 @@
-package com.github.grishberg.tracerecorder
+## CLI
+1) create App.kt
+```
+fun main(args: Array<String>) {
+    val launcher = Launcher(args)
+    launcher.launch()
+}
+
+```
+
+2) Create Launcher.kt
+```
 
 import com.github.grishberg.tracerecorder.common.ConsoleLogger
 import com.github.grishberg.tracerecorder.exceptions.MethodTraceRecordException
@@ -131,3 +142,5 @@ class Launcher(
         recorder.disconnect()
     }
 }
+
+```

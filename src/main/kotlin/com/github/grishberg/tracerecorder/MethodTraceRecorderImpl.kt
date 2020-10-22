@@ -1,12 +1,9 @@
 package com.github.grishberg.tracerecorder
 
-import com.android.ddmlib.*
-import com.github.grishberg.tracerecorder.adb.AdbWrapper
-import com.github.grishberg.tracerecorder.adb.AdbWrapperImpl
+import com.github.grishberg.android.adb.*
 import com.github.grishberg.tracerecorder.adb.ShellOutputReceiver
 import com.github.grishberg.tracerecorder.adb.TraceParser
 import com.github.grishberg.tracerecorder.common.NoOpLogger
-import com.github.grishberg.tracerecorder.common.RecorderLogger
 import com.github.grishberg.tracerecorder.exceptions.*
 import java.io.BufferedOutputStream
 import java.io.File
@@ -26,26 +23,26 @@ private const val TAG = "MethodTraceRecorderImpl"
 
 
 class MethodTraceRecorderImpl(
+    private val adb: AdbWrapper,
+    private val adbDebugWrapper: AdbDebugWrapper,
     private val listener: MethodTraceEventListener,
     private val methodTrace: Boolean,
     private val systrace: Boolean,
-    private val logger: RecorderLogger = NoOpLogger(),
+    private val logger: AdbLogger = NoOpLogger(),
     androidHome: String? = null,
     private val debugPort: Int = 8699,
     forceNewBridge: Boolean = false,
     private val waitForDeviceTimeoutInSeconds: Int = 60,
     private val applicationWaitPostTimeoutInMilliseconds: Long = 10
 ) : MethodTraceRecorder {
-    private var client: Client? = null
-    private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
+    private var client: ClientWrapper? = null
     private var measureStrategy: MeasureStrategy = SamplingMeasure()
 
     @Volatile
     private var shouldRun: Boolean = false
 
     init {
-        MonitorThreadLoggerBridge.setLogger(logger);
-        DdmPreferences.setSelectedDebugPort(debugPort)
+        adbDebugWrapper.setDebugPortBase(debugPort)
     }
 
     @Throws(MethodTraceRecordException::class)
@@ -64,10 +61,10 @@ class MethodTraceRecorderImpl(
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
         initBaseDebugPort()
 
-        if (methodTrace && isPortAlreadyUsed(DdmPreferences.getSelectedDebugPort())) {
-            throw DebugPortBusyException(DdmPreferences.getSelectedDebugPort())
+        if (methodTrace && isPortAlreadyUsed(adbDebugWrapper.getSelectedDebugPort())) {
+            throw DebugPortBusyException(adbDebugWrapper.getSelectedDebugPort())
         }
-        DdmPreferences.setProfilerBufferSizeMb(profilerBufferSizeInMb)
+        adbDebugWrapper.setProfilerBufferSizeMb(profilerBufferSizeInMb)
 
         if (remoteDeviceAddress != null) {
             adb.connect(remoteDeviceAddress)
@@ -77,7 +74,7 @@ class MethodTraceRecorderImpl(
         shouldRun = true
 
         listener.onStartWaitingForDevice()
-        waitForDevices(adb)
+        waitForDevices()
         if (!shouldRun) {
             return
         }
@@ -99,12 +96,12 @@ class MethodTraceRecorderImpl(
         }
 
         listener.onStartWaitingForApplication()
-        waitForApplication(adb, device, packageName, waitForApplicationTimeoutInSeconds)
+        waitForApplication(device, packageName, waitForApplicationTimeoutInSeconds)
         recordSamplingProfile(device, packageName, outputFileName, samplingIntervalInMicroseconds)
     }
 
     @Throws(AppTimeoutException::class)
-    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
+    private fun waitForApplication(device: ConnectedDeviceWrapper, packageName: String, timeoutInSeconds: Int) {
         logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
         val startTime = System.currentTimeMillis()
         var count = 0
@@ -120,7 +117,7 @@ class MethodTraceRecorderImpl(
     }
 
     private fun recordSamplingProfile(
-        device: IDevice,
+        device: ConnectedDeviceWrapper,
         packageName: String,
         outputFileName: String,
         samplingIntervalInMicroseconds: Int
@@ -132,7 +129,7 @@ class MethodTraceRecorderImpl(
         client = device.getClient(packageName)
         logger.d("$TAG: got client $client")
 
-        ClientData.setMethodProfilingHandler(MethodProfilingHandler(logger, listener, outputFileName, adb))
+        adbDebugWrapper.setMethodProfilingHandler(ProfilingHandler(logger, listener, outputFileName, adb))
 
         logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
         measureStrategy.startRecording(samplingIntervalInMicroseconds)
@@ -153,14 +150,14 @@ class MethodTraceRecorderImpl(
             if (openedPortsCount >= 10) {
                 val firstOpenedPort = port - openedPortsCount
                 logger.d("$TAG: selected debug port base $firstOpenedPort")
-                DdmPreferences.setDebugPortBase(firstOpenedPort)
+                adbDebugWrapper.setDebugPortBase(firstOpenedPort)
                 return
             }
             openedPortsCount++
         }
     }
 
-    private fun startActivity(packageName: String, mainActivity: String, device: IDevice) {
+    private fun startActivity(packageName: String, mainActivity: String, device: ConnectedDeviceWrapper) {
         val command =
             "am start $packageName/$mainActivity -c android.intent.category.LAUNCHER -a android.intent.action.MAIN"
         logger.d("$TAG: startActivity cmd='$command', device=$device")
@@ -172,7 +169,7 @@ class MethodTraceRecorderImpl(
         }
     }
 
-    private fun startTrace(packageName: String, device: IDevice) {
+    private fun startTrace(packageName: String, device: ConnectedDeviceWrapper) {
         val command = "atrace -a $packageName -n --async_start"
         logger.d("$TAG: startTrace pkg='$packageName', device=$device")
         device.executeShellCommand(command, ShellOutputReceiver(logger))
@@ -203,8 +200,8 @@ class MethodTraceRecorderImpl(
 
     }
 
-    private fun fetchDevices(): List<IDevice> {
-        val devices = adb.getDevices()
+    private fun fetchDevices(): List<ConnectedDeviceWrapper> {
+        val devices = adb.deviceList()
         if (devices.size > 1) {
             throw MethodTraceRecordException("more than one device")
         } else if (devices.isEmpty()) {
@@ -213,7 +210,7 @@ class MethodTraceRecorderImpl(
         return devices
     }
 
-    private fun stopTrace(device: IDevice) {
+    private fun stopTrace(device: ConnectedDeviceWrapper) {
         logger.d("$TAG stopTrace, device=$device")
         val command = "atrace --async_stop"
         val traceParser = TraceParser(logger)
@@ -247,7 +244,7 @@ class MethodTraceRecorderImpl(
     }
 
     @Throws(DeviceTimeoutException::class)
-    private fun waitForDevices(adb: AdbWrapper) {
+    private fun waitForDevices() {
         logger.d("$TAG: waitForDevice")
         var count = 0
         while (!adb.hasInitialDeviceList() && shouldRun) {
@@ -274,18 +271,18 @@ class MethodTraceRecorderImpl(
         }
     }
 
-    class MethodProfilingHandler(
-        private val logger: RecorderLogger,
+    private class ProfilingHandler(
+        private val logger: AdbLogger,
         private val listener: MethodTraceEventListener,
         private val outputFileName: String,
         private val adb: AdbWrapper
-    ) : ClientData.IMethodProfilingHandler {
-        override fun onSuccess(remoteFilePath: String, client: Client) {
+    ) : MethodProfilingHandler {
+        override fun onSuccess(remoteFilePath: String, client: ClientWrapper) {
             logger.d("$TAG: onSuccess: $remoteFilePath $client")
             listener.onMethodTraceReceived(remoteFilePath)
         }
 
-        override fun onSuccess(data: ByteArray, client: Client) {
+        override fun onSuccess(data: ByteArray, client: ClientWrapper) {
 
             var bs: BufferedOutputStream? = null
             val file = File(outputFileName)
@@ -309,12 +306,12 @@ class MethodTraceRecorderImpl(
             listener.onMethodTraceReceived(file)
         }
 
-        override fun onStartFailure(client: Client, message: String) {
+        override fun onStartFailure(client: ClientWrapper, message: String) {
             adb.stop()
             listener.fail(StartFailureException("onStartFailure: $client $message"))
         }
 
-        override fun onEndFailure(client: Client, message: String) {
+        override fun onEndFailure(client: ClientWrapper, message: String) {
             adb.stop()
             listener.fail(EndFailureException("onEndFailure: $client $message"))
         }
