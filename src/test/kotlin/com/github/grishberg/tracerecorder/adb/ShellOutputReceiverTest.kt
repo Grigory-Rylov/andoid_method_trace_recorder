@@ -1,6 +1,6 @@
 package com.github.grishberg.tracerecorder.adb
 
-import com.github.grishberg.tracerecorder.common.RecorderLogger
+import com.github.grishberg.android.adb.AdbLogger
 import com.github.grishberg.tracerecorder.exceptions.StartActivityException
 import com.nhaarman.mockitokotlin2.mock
 import junit.framework.Assert.assertEquals
@@ -14,7 +14,7 @@ internal class ShellOutputReceiverTest {
         " Error: Activity class {com.grishberg.yayp.debug/com.grishberg.yayp.debug.presentation.MainActivity} does not exist.",
         " "
     )
-    val logger = mock<RecorderLogger>()
+    val logger = mock<AdbLogger>()
     val underTest = ShellOutputReceiver(logger)
 
     @Test
