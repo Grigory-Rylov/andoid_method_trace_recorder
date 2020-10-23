@@ -6,11 +6,9 @@ import com.github.grishberg.tracerecorder.common.RecorderLogger
 import java.util.*
 
 
-private const val BEGIN_TRACE =
-    "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\s\\w+\\:\\sB\\|\\d+\\|(.+)"
-private const val END_TRACE = "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\s\\w+\\:\\sE"
-private const val PARENT_TS_TRACE =
-    "\\s+\\S+\\s\\[(\\S+)\\]\\s\\S+\\s(\\d+\\.\\d+):\\s\\w+\\:\\strace_event_clock_sync:\\sparent_ts=(\\d+\\.\\d+)"
+private const val BEGIN_TRACE = "\\s(\\d+\\.\\d+):\\s\\S+\\:\\sB\\|\\d+\\|(.+)"
+private const val END_TRACE = "\\s(\\d+\\.\\d+):\\s\\w+\\:\\sE"
+private const val PARENT_TS_TRACE = "\\s(\\d+\\.\\d+):\\s\\w+\\:\\strace_event_clock_sync:\\sparent_ts=(\\d+\\.\\d+)"
 
 /**
  * Systrace parser.
