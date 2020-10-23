@@ -24,12 +24,12 @@ import java.util.concurrent.TimeUnit
  */
 private const val TAG = "MethodTraceRecorderImpl"
 
-
 class MethodTraceRecorderImpl(
     private val listener: MethodTraceEventListener,
     private val methodTrace: Boolean,
     private val systrace: Boolean,
     private val logger: RecorderLogger = NoOpLogger(),
+    serialNumber: SerialNumber? = null,
     androidHome: String? = null,
     private val debugPort: Int = 8699,
     forceNewBridge: Boolean = false,
@@ -38,6 +38,9 @@ class MethodTraceRecorderImpl(
 ) : MethodTraceRecorder {
     private var client: Client? = null
     private val adb = AdbWrapperImpl(methodTrace, logger, androidHome, forceNewBridge)
+    private val deviceProvider = DeviceProvider(
+        adb, logger, connectStrategy = DeviceProvider.ConnectStrategy.create(serialNumber)
+    )
     private var measureStrategy: MeasureStrategy = SamplingMeasure()
 
     @Volatile
@@ -59,7 +62,8 @@ class MethodTraceRecorderImpl(
         waitForApplicationTimeoutInSeconds: Int,
         remoteDeviceAddress: String?
     ) {
-        measureStrategy = if (mode == RecordMode.METHOD_SAMPLE) SamplingMeasure() else TracerRecording()
+        measureStrategy =
+            if (mode == RecordMode.METHOD_SAMPLE) SamplingMeasure() else TracerRecording()
 
         logger.d("$TAG: startRecording methodTrace=$methodTrace, systrace=$systrace")
         initBaseDebugPort()
@@ -82,10 +86,7 @@ class MethodTraceRecorderImpl(
             return
         }
 
-        logger.d("$TAG: fetching devices")
-        val devices = fetchDevices()
-        logger.d("$TAG: found devices: $devices")
-        val device = devices.first()
+        val device = deviceProvider.device
 
         if (systrace) {
             startTrace(packageName, device)
@@ -104,7 +105,12 @@ class MethodTraceRecorderImpl(
     }
 
     @Throws(AppTimeoutException::class)
-    private fun waitForApplication(adb: AdbWrapper, device: IDevice, packageName: String, timeoutInSeconds: Int) {
+    private fun waitForApplication(
+        adb: AdbWrapper,
+        device: IDevice,
+        packageName: String,
+        timeoutInSeconds: Int
+    ) {
         logger.d("$TAG: waitForApplication pkg=$packageName, device=$device")
         val startTime = System.currentTimeMillis()
         var count = 0
@@ -132,7 +138,14 @@ class MethodTraceRecorderImpl(
         client = device.getClient(packageName)
         logger.d("$TAG: got client $client")
 
-        ClientData.setMethodProfilingHandler(MethodProfilingHandler(logger, listener, outputFileName, adb))
+        ClientData.setMethodProfilingHandler(
+            MethodProfilingHandler(
+                logger,
+                listener,
+                outputFileName,
+                adb
+            )
+        )
 
         logger.d("$TAG: startSamplingProfiler client=$client, interval=$samplingIntervalInMicroseconds")
         measureStrategy.startRecording(samplingIntervalInMicroseconds)
@@ -193,24 +206,10 @@ class MethodTraceRecorderImpl(
         }
 
         try {
-            val devices = fetchDevices()
-            val device = devices.first()
-
-            stopTrace(device)
+            stopTrace(deviceProvider.device)
         } catch (e: Throwable) {
             logger.e("Error while try stop trace: ${e.message}", e)
         }
-
-    }
-
-    private fun fetchDevices(): List<IDevice> {
-        val devices = adb.getDevices()
-        if (devices.size > 1) {
-            throw MethodTraceRecordException("more than one device")
-        } else if (devices.isEmpty()) {
-            throw NoDeviceException()
-        }
-        return devices
     }
 
     private fun stopTrace(device: IDevice) {

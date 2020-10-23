@@ -15,6 +15,7 @@ private const val OUTPUT_FILE_NAME_OPT_NAME = "o"
 private const val ENABLE_SYSTRACE = "s"
 private const val ENABLE_METHOD_TRACING = "m"
 private const val RECORDING_MODE = "mode"
+private const val SERIAL_NUMBER = "serial"
 
 class Launcher(
     private val args: Array<String>
@@ -34,17 +35,18 @@ class Launcher(
         options.addOption(ENABLE_SYSTRACE, "systrace", false, "Should record systrace")
         options.addOption(ENABLE_METHOD_TRACING, "methods", false, "Should record method tracing")
         options.addOption(RECORDING_MODE, "recording_mode", true, "Record mode sample/trace, sample as default")
+        options.addOption(SERIAL_NUMBER, true, "Device serial number to connect.")
 
         val parser = DefaultParser()
         val formatter = HelpFormatter()
-        try {
+        return try {
             val cmd = parser.parse(options, args)
             initAndLaunch(cmd)
-            return 0
+            0
         } catch (e: ParseException) {
             println(e.message)
             formatter.printHelp("Method trace recorder help:", options)
-            return 1
+            1
         }
     }
 
@@ -56,6 +58,7 @@ class Launcher(
         val methodTrace = cmd.hasOption(ENABLE_METHOD_TRACING)
         val systrace = cmd.hasOption(ENABLE_SYSTRACE)
         val isSampleMode = "trace" != cmd.getOptionValue(RECORDING_MODE)
+        val serialNumber = cmd.getOptionValue(SERIAL_NUMBER)
 
         if (!methodTrace && !systrace) {
             println("You must enter at least -m or -s argument.")
@@ -110,7 +113,8 @@ class Launcher(
             listener,
             methodTrace,
             systrace,
-            ConsoleLogger()
+            ConsoleLogger(),
+            serialNumber = serialNumber?.let(::SerialNumber)
         )
         try {
             recorder.startRecording(
