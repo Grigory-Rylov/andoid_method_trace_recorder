@@ -10,6 +10,11 @@ private const val BEGIN_TRACE = "\\s(\\d+\\.\\d+):\\s\\S+\\:\\sB\\|\\d+\\|(.+)"
 private const val END_TRACE = "\\s(\\d+\\.\\d+):\\s\\w+\\:\\sE"
 private const val PARENT_TS_TRACE = "\\s(\\d+\\.\\d+):\\s\\w+\\:\\strace_event_clock_sync:\\sparent_ts=(\\d+\\.\\d+)"
 
+private const val START_OFFSET_INDEX = 1
+private const val TIME_STAMP_INDEX = 1
+private const val PARENT_TS_INDEX = 2
+private const val NAME_INDEX = 2
+
 /**
  * Systrace parser.
  */
@@ -49,16 +54,16 @@ class TraceParser(
 
             val offsetResult = parentTsPatter.find(line)
             if (offsetResult != null) {
-                startOffset = offsetResult.groupValues[2].toDouble()
-                parentTs = offsetResult.groupValues[3].toDouble()
+                startOffset = offsetResult.groupValues[START_OFFSET_INDEX].toDouble()
+                parentTs = offsetResult.groupValues[PARENT_TS_INDEX].toDouble()
             }
 
             val beginResult = beginTracePattern.find(line)
 
             if (beginResult != null) {
                 // TODO: fix regex to find cpu, val cpu = beginResult.groupValues[1]
-                val timestamp = beginResult.groupValues[1].toDouble()
-                val name = beginResult.groupValues[2]
+                val timestamp = beginResult.groupValues[TIME_STAMP_INDEX].toDouble()
+                val name = beginResult.groupValues[NAME_INDEX]
                 val record = SystraceRecord(name, "-", timestamp)
                 records.push(record)
                 _values.add(record)
