@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.github.Grigory-Rylov'
-version '1.7.5'
+version '1.8.0'
 
 sourceCompatibility = 1.8
 
@@ -43,6 +43,7 @@ dependencies {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-Xinline-classes"]
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
