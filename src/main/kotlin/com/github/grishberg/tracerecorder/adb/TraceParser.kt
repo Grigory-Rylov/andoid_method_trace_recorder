@@ -56,10 +56,10 @@ class TraceParser(
             val beginResult = beginTracePattern.find(line)
 
             if (beginResult != null) {
-                val cpu = beginResult.groupValues[1]
-                val timestamp = beginResult.groupValues[2].toDouble()
-                val name = beginResult.groupValues[3]
-                val record = SystraceRecord(name, cpu, timestamp)
+                // TODO: fix regex to find cpu, val cpu = beginResult.groupValues[1]
+                val timestamp = beginResult.groupValues[1].toDouble()
+                val name = beginResult.groupValues[2]
+                val record = SystraceRecord(name, "-", timestamp)
                 records.push(record)
                 _values.add(record)
                 continue
