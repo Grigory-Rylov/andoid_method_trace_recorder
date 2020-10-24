@@ -6,7 +6,7 @@ Used to record method `.trace` files which can be opened in [Android Trace Viewe
 # CLI Usage
 
 ```
-java -jar trace-recorder.java -p <package> [-m] [-s] [-a <activity>] [-o <output_file_name>]
+java -jar trace-recorder.java -p <package> [-m] [-s] [-a <activity>] [-o <output_file_name>] [-serial <device>]
 
 ```
 
@@ -28,6 +28,11 @@ to start `activityName` and method trace recording.
 # Building CLI jar from sources
 Clone sources and write in terminal `./gradlew fatJar` 
 android-profiler-[VERSION].jar will be placed in `build/libs/`
+
+# Integration test
+
+Run `./scripts/integration_test.sh` while at least one Android device connected
+to ensure everything works as expected.
 
 # License
 Copyright [2020] [Grigory Rylov]
