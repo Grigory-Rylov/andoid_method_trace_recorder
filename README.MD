@@ -29,6 +29,11 @@ to start `activityName` and method trace recording.
 Clone sources and write in terminal `./gradlew fatJar` 
 android-profiler-[VERSION].jar will be placed in `build/libs/`
 
+# Integration test
+
+Run `./scripts/integration_test.sh` while at least one Android device connected
+to ensure everything works as expected.
+
 # License
 Copyright [2020] [Grigory Rylov]
 
