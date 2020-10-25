@@ -1,9 +1,9 @@
 package com.github.grishberg.tracerecorder
 
-import com.android.ddmlib.IDevice
+import com.github.grishberg.android.adb.AdbLogger
+import com.github.grishberg.android.adb.AdbWrapper
+import com.github.grishberg.android.adb.ConnectedDeviceWrapper
 import com.github.grishberg.tracerecorder.DeviceProvider.ConnectStrategy
-import com.github.grishberg.tracerecorder.adb.AdbWrapper
-import com.github.grishberg.tracerecorder.common.RecorderLogger
 import com.github.grishberg.tracerecorder.exceptions.DeviceNotFoundException
 import com.github.grishberg.tracerecorder.exceptions.NoDeviceException
 
@@ -20,7 +20,7 @@ inline class SerialNumber(val value: String)
  */
 internal class DeviceProvider(
     private val adb: AdbWrapper,
-    private val logger: RecorderLogger,
+    private val logger: AdbLogger,
     private val connectStrategy: ConnectStrategy = ConnectStrategy.First
 ) {
 
@@ -31,10 +31,10 @@ internal class DeviceProvider(
      * @throws NoDeviceException if no devices connected.
      * @throws DeviceNotFoundException if device with given serial number is not found.
      */
-    val device: IDevice
+    val device: ConnectedDeviceWrapper
         get() = connectStrategy.device(fetchDevices())
 
-    private fun ConnectStrategy.device(devices: List<IDevice>): IDevice {
+    private fun ConnectStrategy.device(devices: List<ConnectedDeviceWrapper>): ConnectedDeviceWrapper {
         return when (this) {
             ConnectStrategy.First -> {
                 logger.d("$TAG: first device")
@@ -49,9 +49,9 @@ internal class DeviceProvider(
         }
     }
 
-    private fun fetchDevices(): List<IDevice> {
+    private fun fetchDevices(): List<ConnectedDeviceWrapper> {
         logger.d("$TAG: fetching devices")
-        val devices = adb.getDevices()
+        val devices = adb.deviceList()
         logger.d("$TAG: found devices: $devices")
         if (devices.isEmpty()) {
             throw NoDeviceException()
