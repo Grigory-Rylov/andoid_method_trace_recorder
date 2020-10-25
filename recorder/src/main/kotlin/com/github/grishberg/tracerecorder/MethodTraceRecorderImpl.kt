@@ -28,16 +28,15 @@ class MethodTraceRecorderImpl(
     private val methodTrace: Boolean,
     private val systrace: Boolean,
     private val logger: AdbLogger = NoOpLogger(),
-    serialNumber: SerialNumber? = null,
+    private val deviceProvider: DeviceProvider = DeviceProviderImpl(
+        adb, logger, connectStrategy = DeviceProviderImpl.ConnectStrategy.First
+    ),
     debugPort: Int = 8699,
     private val waitForDeviceTimeoutInSeconds: Int = 60,
     private val applicationWaitPostTimeoutInMilliseconds: Long = 10
 ) : MethodTraceRecorder {
     private var client: ClientWrapper? = null
     private var measureStrategy: MeasureStrategy = SamplingMeasure()
-    private val deviceProvider = DeviceProvider(
-        adb, logger, connectStrategy = DeviceProvider.ConnectStrategy.create(serialNumber)
-    )
 
     @Volatile
     private var shouldRun: Boolean = false
@@ -81,7 +80,7 @@ class MethodTraceRecorderImpl(
             return
         }
 
-        val device = deviceProvider.device
+        val device = deviceProvider.getDevice()
 
         if (systrace) {
             startTrace(packageName, device)
@@ -200,7 +199,7 @@ class MethodTraceRecorderImpl(
         }
 
         try {
-            stopTrace(deviceProvider.device)
+            stopTrace(deviceProvider.getDevice())
         } catch (e: Throwable) {
             logger.e("Error while try stop trace: ${e.message}", e)
         }

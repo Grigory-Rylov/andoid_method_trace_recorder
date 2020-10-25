@@ -111,14 +111,19 @@ class Launcher(
         }
 
         val logger = ConsoleLogger()
+        val adb = DdmAdbWrapper(logger, true)
         val recorder = MethodTraceRecorderImpl(
-            DdmAdbWrapper(logger, true),
+            adb,
             DdmAdbDebugWrapper(logger),
             listener,
             methodTrace,
             systrace,
             logger,
-            serialNumber = serialNumber?.let(::SerialNumber)
+            DeviceProviderImpl(
+                adb,
+                logger,
+                connectStrategy = DeviceProviderImpl.ConnectStrategy.create(serialNumber?.let(::SerialNumber))
+            )
         )
         try {
             recorder.startRecording(

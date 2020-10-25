@@ -18,7 +18,7 @@ internal class DeviceProviderTest {
     @Test
     fun `device by serial`() {
         val underTest =
-            createUnderTest(DeviceProvider.ConnectStrategy.Serial(SerialNumber(TEST_SERIAL_2)))
+            createUnderTest(DeviceProviderImpl.ConnectStrategy.Serial(SerialNumber(TEST_SERIAL_2)))
         whenDevicesConnected()
 
         Assert.assertEquals(TEST_DEVICE_2, underTest.device)
@@ -27,7 +27,7 @@ internal class DeviceProviderTest {
     @Test(expected = DeviceNotFoundException::class)
     fun `device by serial not found`() {
         val underTest =
-            createUnderTest(DeviceProvider.ConnectStrategy.Serial(SerialNumber(TEST_SERIAL_NOT_FOUND)))
+            createUnderTest(DeviceProviderImpl.ConnectStrategy.Serial(SerialNumber(TEST_SERIAL_NOT_FOUND)))
         whenDevicesConnected()
 
         underTest.device
@@ -36,7 +36,7 @@ internal class DeviceProviderTest {
     @Test(expected = NoDeviceException::class)
     fun `device by serial when no devices connected`() {
         val underTest =
-            createUnderTest(DeviceProvider.ConnectStrategy.Serial(SerialNumber(TEST_SERIAL_NOT_FOUND)))
+            createUnderTest(DeviceProviderImpl.ConnectStrategy.Serial(SerialNumber(TEST_SERIAL_NOT_FOUND)))
         whenNoDevicesConnected()
 
         underTest.device
@@ -44,7 +44,7 @@ internal class DeviceProviderTest {
 
     @Test
     fun `first device`() {
-        val underTest = createUnderTest(DeviceProvider.ConnectStrategy.First)
+        val underTest = createUnderTest(DeviceProviderImpl.ConnectStrategy.First)
         whenDevicesConnected()
 
         Assert.assertEquals(TEST_DEVICE_1, underTest.device)
@@ -52,7 +52,7 @@ internal class DeviceProviderTest {
 
     @Test(expected = NoDeviceException::class)
     fun `first device when no devices connected`() {
-        val underTest = createUnderTest(DeviceProvider.ConnectStrategy.First)
+        val underTest = createUnderTest(DeviceProviderImpl.ConnectStrategy.First)
         whenNoDevicesConnected()
 
         underTest.device
@@ -66,8 +66,8 @@ internal class DeviceProviderTest {
         whenever(adb.getDevices()).doReturn(emptyList())
     }
 
-    private fun createUnderTest(connectStrategy: DeviceProvider.ConnectStrategy): DeviceProvider {
-        return DeviceProvider(adb, NoOpLogger(), connectStrategy)
+    private fun createUnderTest(connectStrategy: DeviceProviderImpl.ConnectStrategy): DeviceProviderImpl {
+        return DeviceProviderImpl(adb, NoOpLogger(), connectStrategy)
     }
 
     private companion object {
