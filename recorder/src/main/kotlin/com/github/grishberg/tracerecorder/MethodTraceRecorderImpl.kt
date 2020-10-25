@@ -29,9 +29,7 @@ class MethodTraceRecorderImpl(
     private val systrace: Boolean,
     private val logger: AdbLogger = NoOpLogger(),
     serialNumber: SerialNumber? = null,
-    androidHome: String? = null,
-    private val debugPort: Int = 8699,
-    forceNewBridge: Boolean = false,
+    debugPort: Int = 8699,
     private val waitForDeviceTimeoutInSeconds: Int = 60,
     private val applicationWaitPostTimeoutInMilliseconds: Long = 10
 ) : MethodTraceRecorder {

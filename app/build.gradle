@@ -1,0 +1,61 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
+}
+sourceCompatibility = 1.8
+
+version '2.0.0'
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven { url 'https://jitpack.io' }
+    google()
+}
+
+ext {
+    slf4jVersion = '1.7.25'
+    log4jVersion = '1.2.17'
+}
+
+dependencies {
+    implementation ('com.android.tools.ddms:ddmlib:26.6.3') {
+        exclude group: 'com.android.ddmlib', module: 'MonitorThread'
+    }
+    implementation 'com.github.Grigory-Rylov:adb-facade-core:0.1.8'
+    implementation 'com.github.Grigory-Rylov:adb-facade-ddmlib:0.1.2'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.slf4j:slf4j-log4j12:${slf4jVersion}"
+    implementation "log4j:log4j:$log4jVersion"
+
+    // https://mvnrepository.com/artifact/commons-io/commons-io
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation project(':recorder')
+
+    testImplementation "junit:junit:4.12"
+    testImplementation 'org.mockito:mockito-core:2.23.0'
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.1.0"
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-Xinline-classes"]
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'com.github.grishberg.tracerecorder.AppKt'
+    }
+    baseName = 'android-profiler'
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+}
