@@ -3,10 +3,10 @@
 set -x
 
 # TODO(geaden): Assign version dynamically
-COMMAND="java -jar build/libs/android-profiler-1.8.0.jar -m -a com.github.grishberg.testapp.MainActivity -p com.github.grishberg.testapp -t 15"
+COMMAND="java -jar app/build/libs/android-profiler-2.0.0.jar -m -a com.github.grishberg.testapp.MainActivity -p com.github.grishberg.testapp -t 15"
 
 echo '1. Compile and build latest version of AMTR'
-./gradlew fatJar
+./gradlew app:fatJar
 
 echo '2. Compile and build latest version of testapp'
 pushd testapp
